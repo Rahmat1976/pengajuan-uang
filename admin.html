@@ -475,23 +475,52 @@ window.hapus = async id => {
   for (const f of (fotoMap[id]||[])) await deleteDoc(doc(db,'foto',f.id));
   await deleteDoc(doc(db,'pengajuan',id));
 };
-window.kirimWA = id => {
+
+/* ===== KIRIM WA + FOTO TERPISAH ===== */
+function b64ToFile(b64, nama){
+  return fetch(b64).then(r=>r.blob()).then(b=>new File([b], nama, {type:'image/jpeg'}));
+}
+function buatTeksWA(p){
+  const tglW = p.waktu?.toDate?.();
+  const tgl = tglW ? tglW.getFullYear()+String(tglW.getMonth()+1).padStart(2,'0')+String(tglW.getDate()).padStart(2,'0') : '';
+  const noId = 'SMJ-'+tgl+'-'+String(p.id||'').replace(/[^a-z0-9]/gi,'').slice(-4).toUpperCase();
+  const ujB = (p.uangJalan||0)-(p.kasBon||0);
+  const ubKet = (p.qty||0) >= 1000 ? 'PER MOBIL' : 'PER KARTON';
+  const neto = ujB + (p.uangBongkar||0) + (p.uangStandby||0) + (p.uangTambahan||0);
+  return `*PENGAJUAN UJ – TRANSPORT SMJ*
+ID: ${noId}
+SUPIR: ${p.nama}
+NO POL: ${p.noPol}
+UNIT: ${p.unit}
+TUJUAN: ${p.tujuan}
+NO. DN: ${p.noDN||'-'}
+QTY: ${p.qty||0} KARTON
+UJ: ${rp(p.uangJalan)}
+KBM: -${rp(p.kasBon)} (POTONG DARI UJ)
+UJ BERSIH: ${rp(ujB)}
+UB: ${rp(p.uangBongkar)} (${ubKet})
+STANDBY: ${rp(p.uangStandby)}
+TAMBAHAN: ${rp(p.uangTambahan)}${p.ket?' ('+p.ket+')':''}
+*TOTAL (NETO): ${rp(neto)}*
+Mohon diproses. Terima kasih.`;
+}
+window.kirimWA = async id => {
   const p = semuaData.find(x=>x.id===id); if (!p) return;
-  const txt = `*PENGAJUAN UANG*
-👤 ${p.nama}
-🚚 ${p.noPol} (${p.unit})
-📍 ${p.tujuan}
-🧾 No. DN: ${p.noDN||'-'}
-📦 Qty: ${p.qty||0} karton
-----------------------
-Uang Jalan: ${rp(p.uangJalan)}
-Kas Bon Muat: -${rp(p.kasBon)}
-Uang Standby: ${rp(p.uangStandby)}
-Uang Tambahan: ${rp(p.uangTambahan)}
-Uang Bongkar: ${rp(p.uangBongkar)}
-*DITERIMA: ${rp(p.diterima)}*`;
+  const txt = buatTeksWA(p);
+  const fotos = (fotoMap[id]||[]).slice(0,8);
+  try {
+    if (fotos.length && navigator.canShare) {
+      const files = [];
+      for (let i=0;i<fotos.length;i++) files.push(await b64ToFile(fotos[i].data, 'surat-jalan-'+(i+1)+'.jpg'));
+      if (navigator.canShare({files})) {
+        await navigator.share({ files, text: txt });
+        return;
+      }
+    }
+  } catch(e) { if (e && e.name==='AbortError') return; }
   window.open('https://wa.me/?text='+encodeURIComponent(txt), '_blank');
 };
+
 window.lihat = id => {
   const f = Object.values(fotoMap).flat().find(x=>x.id===id);
   if (!f) return;
