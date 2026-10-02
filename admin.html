@@ -231,7 +231,7 @@ window.toggleTema = () => {
 };
 terapTema();
 
-/* ===== NOTIFIKASI SUARA ===== */
+/* ===== NOTIFIKASI SUARA BERULANG ===== */
 let audioCtx = null;
 ['click','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{
   try{ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
@@ -255,6 +255,15 @@ function bunyiNotif(){
     nada(0,880,1174); nada(0.45,988,1318);
     if (navigator.vibrate) navigator.vibrate([300,150,300]);
   }catch(e){}
+}
+let notifTimer = null;
+function mulaiNotifBerulang(){
+  if (notifTimer) return;
+  bunyiNotif();
+  notifTimer = setInterval(bunyiNotif, 5000);
+}
+function stopNotifBerulang(){
+  if (notifTimer) { clearInterval(notifTimer); notifTimer = null; }
 }
 
 /* ===== GERBANG PASSWORD ===== */
@@ -298,7 +307,8 @@ function bukaApp(){
   onSnapshot(query(collection(db,'pengajuan'), orderBy('waktu','desc')), s => {
     semuaData=[]; s.forEach(d=>semuaData.push({id:d.id,...d.data()}));
     const nn = semuaData.filter(p=>p.status==='menunggu').length;
-    if (sudahMuat && nn > nungguSebelumnya) bunyiNotif();
+    if (sudahMuat && nn > nungguSebelumnya) mulaiNotifBerulang();
+    if (nn === 0) stopNotifBerulang();
     nungguSebelumnya=nn; sudahMuat=true;
     renderRiwayat(); renderDash();
   });
@@ -675,6 +685,7 @@ function renderDash(){
 window.toggleSuara = () => {
   const off = localStorage.getItem('suara')==='off';
   localStorage.setItem('suara', off?'on':'off');
+  if (!off) stopNotifBerulang();
   renderDash();
 };
 window.gantiPw = () => {
