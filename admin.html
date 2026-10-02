@@ -37,6 +37,8 @@
   .chip button.aktif{background:#1a73e8;color:#fff;border-color:#1a73e8}
   table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
   td,th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}th{color:#888}
+  .tr{margin-top:10px}
+  .tr b{display:block;font-size:12px;color:#1a73e8;margin-bottom:4px}
   .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .thumb{position:relative;width:70px;height:70px}
   .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd;cursor:pointer}
@@ -83,6 +85,7 @@
   <label>Unit</label><input id="fUnit" readonly>
   <label>Tujuan</label>
   <select id="fTujuan" onchange="pilihTujuan()"><option value="">-- Pilih Tujuan --</option></select>
+  <div class="kecil">UJ & UB otomatis sesuai unit supir.</div>
   <label>Uang Jalan (Rp)</label><input id="fUJ" type="number" inputmode="numeric" oninput="rehitung()">
   <label>No. DN</label>
   <div class="row">
@@ -96,9 +99,8 @@
   </div>
   <label>Qty Karton</label><input id="fQty" type="number" inputmode="numeric" oninput="rehitung()">
   <label>UB / Karton (Rp)</label><input id="fUBK" type="number" inputmode="numeric" oninput="rehitung()">
-  <label>UB / Mobil (Rp)</label><input id="fUBM" type="number" inputmode="numeric" oninput="rehitung()">
   <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="fBongkar" type="number" inputmode="numeric" oninput="rehitung()">
-  <div class="kecil">Otomatis: qty &lt; 1000 → qty × UB karton • qty ≥ 1000 → UB mobil</div>
+  <div class="kecil">Otomatis: qty &lt; 1000 → qty × UB • qty ≥ 1000 → UB × 1000</div>
   <label>Yang Standby</label><input id="fStandby" placeholder="Nama / ket. yang standby">
   <label>Uang Standby (Rp)</label><input id="fUStandby" type="number" inputmode="numeric" oninput="rehitung()">
   <label>Uang Kas Bon Muat (dipotong dari uang jalan)</label><input id="fKasbon" type="number" inputmode="numeric" oninput="rehitung()">
@@ -128,7 +130,7 @@
   <h2>➕ Tambah Supir</h2>
   <label>Nama</label><input id="sNama">
   <label>No. Pol</label><input id="sNopol" placeholder="B 1234 ABC">
-  <label>Unit</label><input id="sUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CFD / CDE">
+  <label>Unit</label><input id="sUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CDD / CDE">
   <label>Password</label><input id="sPw">
   <button onclick="tambahSupir()">Simpan Supir</button>
 </div>
@@ -139,17 +141,18 @@
 <div class="card">
   <h2>➕ Tambah Tujuan</h2>
   <label>Nama Tujuan</label><input id="tNama" placeholder="Jakarta">
-  <label>Unit</label><input id="tUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CFD / CDE">
-  <label>Uang Jalan (Rp)</label><input id="tUJ" type="number" inputmode="numeric">
-  <label>UB per Karton (Rp)</label><input id="tUBK" type="number" inputmode="numeric" placeholder="500">
-  <label>UB per Mobil (Rp, untuk qty ≥ 1000)</label><input id="tUBM" type="number" inputmode="numeric" placeholder="500000">
+  <div class="kecil" style="margin-top:8px">Isi UJ (uang jalan) &amp; UB (per karton) tiap unit. Kosongkan jika tidak tersedia.</div>
+  <div class="tr"><b>Wing Box</b><div class="row"><input id="tUJ0" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB0" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
+  <div class="tr"><b>Fuso Long</b><div class="row"><input id="tUJ1" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB1" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
+  <div class="tr"><b>CDD</b><div class="row"><input id="tUJ2" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB2" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
+  <div class="tr"><b>CDE</b><div class="row"><input id="tUJ3" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB3" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
   <button onclick="tambahTujuan()">Simpan Tujuan</button>
 </div>
 <div class="card"><h2>📍 Master Tujuan</h2><div id="listTujuan"></div></div>
 </div>
 
 <datalist id="dlUnit">
-  <option>Wing Box</option><option>Fuso Long</option><option>CFD</option>
+  <option>Wing Box</option><option>Fuso Long</option><option>CDD</option>
   <option>CDE</option>
 </datalist>
 
@@ -167,8 +170,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  onSnapshot, query, where, orderBy, serverTimestamp }
+import { getFirestore, collection, addDoc, doc, getDoc, setDoc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -186,8 +189,8 @@ const $ = id => document.getElementById(id);
 const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function hitungUB(qty, ubk, ubm){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ubk)||0);if(qty>=1000)return Number(ubm)||0;return 0;}
-const terima = p => (p.uangJalan||0)-(p.kasBon||0)+(p.uangStandby||0)+(p.uangTambahan||0);
+function hitungUB(qty, ub, ubFlat){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ub)||0);if(qty>=1000)return Number(ubFlat)||0;return 0;}
+const UNITS = ['Wing Box','Fuso Long','CDD','CDE'];
 
 let daftarSupir=[], daftarTujuan=[], semuaData=[], fotoMap={}, mulaiInit=false;
 
@@ -224,6 +227,7 @@ function bukaApp(){
   });
   onSnapshot(collection(db,'tujuan'), s => {
     daftarTujuan=[]; s.forEach(d=>daftarTujuan.push({id:d.id,...d.data()}));
+    daftarTujuan.sort((a,b)=>a.nama.localeCompare(b.nama));
     isiDropdownTujuan(); renderTujuan();
   });
   onSnapshot(query(collection(db,'pengajuan'), orderBy('waktu','desc')), s => {
@@ -239,7 +243,7 @@ function bukaApp(){
 /* ===== NAVIGASI ===== */
 window.tab = (n, btn) => {
   ['dash','input','riwayat','msupir','mtujuan'].forEach(x => $('t'+x).style.display = x===n ? 'block':'none');
-  document.querySelectorAll('.nav b utton').forEach(b=>b.classList.remove('aktif'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('aktif'));
   btn.classList.add('aktif');
 };
 
@@ -252,25 +256,28 @@ window.pilihSupir = () => {
   const s = daftarSupir.find(x=>x.id===$('fSupir').value);
   $('fNopol').value = s ? s.noPol : '';
   $('fUnit').value = s ? s.unit : '';
-  isiDropdownTujuan();
 };
 function isiDropdownTujuan(){
-  const u = ($('fUnit').value||'').toLowerCase();
-  const arr = [...daftarTujuan].sort((a,b)=>
-    ((a.unit?.toLowerCase()===u?0:1)-(b.unit?.toLowerCase()===u?0:1)) || a.nama.localeCompare(b.nama));
   $('fTujuan').innerHTML = '<option value="">-- Pilih Tujuan --</option>' +
-    arr.map(t=>`<option value="${t.id}">${esc(t.nama)} — ${esc(t.unit)} (UJ ${rp(t.uangJalan)})</option>`).join('');
+    daftarTujuan.map(t=>`<option value="${t.id}">${esc(t.nama)}</option>`).join('');
 }
 window.pilihTujuan = () => {
   const t = daftarTujuan.find(x=>x.id===$('fTujuan').value);
   if (!t) return;
-  $('fUJ').value = t.uangJalan||0;
-  $('fUBK').value = t.ubKarton||0;
-  $('fUBM').value = t.ubMobil||0;
+  const u = ($('fUnit').value||'').toLowerCase();
+  const tr = (t.tarif||[]).find(x=>(x.unit||'').toLowerCase()===u);
+  if (!tr) {
+    alert('⚠️ Tujuan "'+t.nama+'" belum punya tarif untuk unit "'+($('fUnit').value||'?')+'".\nIsi manual atau tambahkan tarif di Master Tujuan.');
+    $('fUJ').value=0; $('fUBK').value=0;
+  } else {
+    $('fUJ').value = tr.uj||0;
+    $('fUBK').value = tr.ub||0;
+  }
   rehitung();
 };
 window.rehitung = () => {
-  $('fBongkar').value = hitungUB($('fQty').value, $('fUBK').value, $('fUBM').value);
+  const ub = Number($('fUBK').value)||0;
+  $('fBongkar').value = hitungUB($('fQty').value, ub, ub*1000);
   $('prevDiterima').textContent = rp(
     (Number($('fUJ').value)||0)-(Number($('fKasbon').value)||0)
     +(Number($('fUStandby').value)||0)+(Number($('fTambahan').value)||0));
@@ -312,10 +319,11 @@ window.simpan = async () => {
   if (!t) return alert('Pilih tujuan!');
   const uj=Number($('fUJ').value)||0, kb=Number($('fKasbon').value)||0,
         us=Number($('fUStandby').value)||0, tb=Number($('fTambahan').value)||0;
+  const ub = Number($('fUBK').value)||0;
   const data = {
     supirId:s.id, nama:s.nama, noPol:s.noPol, unit:s.unit,
-    tujuanId:t.id, tujuan:t.nama+' - '+t.unit, unitTujuan:t.unit,
-    uangJalan:uj, ubKarton:Number($('fUBK').value)||0, ubMobil:Number($('fUBM').value)||0,
+    tujuanId:t.id, tujuan:t.nama,
+    uangJalan:uj, ubKarton:ub, ubMobil:ub*1000,
     qty:Number($('fQty').value)||0, uangBongkar:Number($('fBongkar').value)||0,
     noDN:$('fDN').value.trim(), yangStandby:$('fStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('fKet').value.trim(),
@@ -325,10 +333,10 @@ window.simpan = async () => {
     const ref = await addDoc(collection(db,'pengajuan'), data);
     for (const f of fileFoto) await addDoc(collection(db,'foto'), {pid:ref.id, data:f});
     alert('✅ Pengajuan tersimpan!');
-    ['fDN','fQty','fBongkar','fStandby','fUStandby','fKasbon','fTambahan','fKet','fUJ','fUBK','fUBM','fNopol','fUnit']
+    ['fDN','fQty','fBongkar','fStandby','fUStandby','fKasbon','fTambahan','fKet','fUJ','fUBK','fNopol','fUnit']
       .forEach(x=>$(x).value='');
     $('fSupir').value=''; $('fTujuan').value=''; fileFoto=[]; renderFoto();
-    $('prevDiterima').textContent='Rp 0'; isiDropdownTujuan();
+    $('prevDiterima').textContent='Rp 0';
   } catch(err){ alert('Gagal: '+err.message); }
 };
 
@@ -394,7 +402,6 @@ window.bukaEdit = id => {
     <label>No. DN</label><input id="eDN" value="${esc(p.noDN)}">
     <label>Uang Jalan</label><input id="eUJ" type="number" value="${p.uangJalan||0}" oninput="eHitung()">
     <label>UB / Karton</label><input id="eUBK" type="number" value="${p.ubKarton||0}" oninput="eHitung()">
-    <label>UB / Mobil</label><input id="eUBM" type="number" value="${p.ubMobil||0}" oninput="eHitung()">
     <label>Uang Bongkar</label><input id="eBongkar" type="number" value="${p.uangBongkar||0}">
     <label>Yang Standby</label><input id="eStandby" value="${esc(p.yangStandby)}">
     <label>Uang Standby</label><input id="eUS" type="number" value="${p.uangStandby||0}" oninput="eHitung()">
@@ -413,7 +420,8 @@ window.bukaEdit = id => {
   $('modal').style.display='block'; eHitung();
 };
 window.eHitung = () => {
-  $('eBongkar').value = hitungUB($('eQty').value,$('eUBK').value,$('eUBM').value);
+  const ub = Number($('eUBK').value)||0;
+  $('eBongkar').value = hitungUB($('eQty').value, ub, ub*1000);
   $('eDiterima').textContent = rp(
     (Number($('eUJ').value)||0)-(Number($('eKB').value)||0)
     +(Number($('eUS').value)||0)+(Number($('eT').value)||0));
@@ -421,9 +429,10 @@ window.eHitung = () => {
 window.simpanEdit = async () => {
   const uj=Number($('eUJ').value)||0, kb=Number($('eKB').value)||0,
         us=Number($('eUS').value)||0, tb=Number($('eT').value)||0;
+  const ub = Number($('eUBK').value)||0;
   await updateDoc(doc(db,'pengajuan',editId), {
     noDN:$('eDN').value.trim(), qty:Number($('eQty').value)||0,
-    uangJalan:uj, ubKarton:Number($('eUBK').value)||0, ubMobil:Number($('eUBM').value)||0,
+    uangJalan:uj, ubKarton:ub, ubMobil:ub*1000,
     uangBongkar:Number($('eBongkar').value)||0,
     yangStandby:$('eStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('eKet').value.trim(),
@@ -478,50 +487,55 @@ window.hapusSupir = async id => {
   if (confirm('Hapus supir ini?')) await deleteDoc(doc(db,'supir',id));
 };
 
-/* ===== MASTER TUJUAN ===== */
+/* ===== MASTER TUJUAN (tarif per unit) ===== */
 function renderTujuan(){
-  $('listTujuan').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>`
-    <div class="item" style="border-color:#1a73e8">
-      <div class="tebal">${esc(t.nama)} — ${esc(t.unit)}</div>
-      <div class="kecil">UJ: ${rp(t.uangJalan)} • UB karton: ${rp(t.ubKarton)} • UB mobil: ${rp(t.ubMobil)}</div>
+  $('listTujuan').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>{
+    const rows = (t.tarif||[]).map(x=>
+      `<tr><td>${esc(x.unit)}</td><td>${rp(x.uj)}</td><td>${rp(x.ub)}/ktn</td></tr>`).join('');
+    return `<div class="item" style="border-color:#1a73e8">
+      <div class="tebal">📍 ${esc(t.nama)}</div>
+      ${rows?`<table><tr><th>Unit</th><th>UJ</th><th>UB</th></tr>${rows}</table>`:'<div class="kecil">Belum ada tarif.</div>'}
       <div class="aksi">
         <button class="abu2" onclick="editTujuan('${t.id}')">✏️ Edit</button>
         <button class="merah" onclick="hapusTujuan('${t.id}')">🗑</button>
       </div>
-    </div>`).join('') : 'Belum ada tujuan.';
+    </div>`;
+  }).join('') : 'Belum ada tujuan.';
 }
 window.tambahTujuan = async () => {
   const nama=$('tNama').value.trim();
   if (!nama) return alert('Isi nama tujuan!');
-  await addDoc(collection(db,'tujuan'), {
-    nama, unit:$('tUnit').value.trim(),
-    uangJalan:Number($('tUJ').value)||0,
-    ubKarton:Number($('tUBK').value)||0,
-    ubMobil:Number($('tUBM').value)||0
-  });
-  ['tNama','tUnit','tUJ','tUBK','tUBM'].forEach(x=>$(x).value='');
+  const tarif = UNITS.map((u,i)=>({
+    unit:u, uj:Number($('tUJ'+i).value)||0, ub:Number($('tUB'+i).value)||0
+  })).filter(x=>x.uj||x.ub);
+  if (!tarif.length) return alert('Isi minimal satu tarif (UJ atau UB)!');
+  await addDoc(collection(db,'tujuan'), { nama, tarif });
+  $('tNama').value='';
+  UNITS.forEach((u,i)=>{$('tUJ'+i).value='';$('tUB'+i).value='';});
   alert('✅ Tujuan ditambahkan!');
 };
 window.editTujuan = id => {
   const t = daftarTujuan.find(x=>x.id===id);
+  const rows = UNITS.map((u,i)=>{
+    const tr=(t.tarif||[]).find(x=>x.unit===u)||{uj:0,ub:0};
+    return `<div class="tr"><b>${u}</b><div class="row">
+      <input id="eTUJ${i}" type="number" inputmode="numeric" value="${tr.uj||0}" placeholder="UJ">
+      <input id="eTUB${i}" type="number" inputmode="numeric" value="${tr.ub||0}" placeholder="UB/karton">
+    </div></div>`;
+  }).join('');
   $('modalBody').innerHTML = `
     <h2>✏️ Edit Tujuan</h2>
     <label>Nama</label><input id="eTN" value="${esc(t.nama)}">
-    <label>Unit</label><input id="eTU" value="${esc(t.unit)}">
-    <label>Uang Jalan</label><input id="eTUJ" type="number" value="${t.uangJalan||0}">
-    <label>UB / Karton</label><input id="eTUBK" type="number" value="${t.ubKarton||0}">
-    <label>UB / Mobil</label><input id="eTUBM" type="number" value="${t.ubMobil||0}">
+    ${rows}
     <button onclick="simpanTujuan('${id}')">💾 Simpan</button>
     <button class="abu2" onclick="tutupModal()">Batal</button>`;
   $('modal').style.display='block';
 };
 window.simpanTujuan = async id => {
-  await updateDoc(doc(db,'tujuan',id), {
-    nama:$('eTN').value.trim(), unit:$('eTU').value.trim(),
-    uangJalan:Number($('eTUJ').value)||0,
-    ubKarton:Number($('eTUBK').value)||0,
-    ubMobil:Number($('eTUBM').value)||0
-  });
+  const tarif = UNITS.map((u,i)=>({
+    unit:u, uj:Number($('eTUJ'+i).value)||0, ub:Number($('eTUB'+i).value)||0
+  })).filter(x=>x.uj||x.ub);
+  await updateDoc(doc(db,'tujuan',id), { nama:$('eTN').value.trim(), tarif });
   tutupModal();
 };
 window.hapusTujuan = async id => {
@@ -579,7 +593,7 @@ window.mulaiScan = async () => {
     await scanner.start({facingMode:'environment'}, {fps:10, qrbox:{width:250,height:120}},
       teks => { $('fDN').value = teks; stopScan(); }, ()=>{});
   } catch(e) {
-    alert('Kamera tidak bisa dibuka di sini. Isi manual, atau buka aplikasi lewat link https (setelah di-hosting).');
+    alert('Kamera tidak bisa dibuka di sini. Isi manual.');
     stopScan();
   }
 };
