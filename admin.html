@@ -6,55 +6,73 @@
 <title>Admin - Pengajuan Uang</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
+  :root{
+    --bg:#eef1f6;--card:#ffffff;--tx:#101a2c;--sub:#5b6b82;--line:#e3e8f0;
+    --inp:#ffffff;--acc:#16325c;--accSoft:#e9effb;--gold:#a97b1f;
+    --btn1:#16325c;--btn2:#2a4f96;--btnTx:#ffffff;--accTx:#ffffff;
+    --mut:#64748b;--ok:#169a52;--bad:#d92d20;--warn:#b45309;
+    --shadow:0 2px 12px rgba(16,26,44,.08);
+  }
+  body.gelap{
+    --bg:#090e1a;--card:#121a2e;--tx:#eaeff9;--sub:#93a4c3;--line:#22304e;
+    --inp:#0d1425;--acc:#e8c15a;--accSoft:#1a2440;--gold:#e8c15a;
+    --btn1:#e8c15a;--btn2:#c39a33;--btnTx:#141a28;--accTx:#141a28;
+    --mut:#4b5b76;--ok:#2ecc8f;--bad:#ff6b5e;--warn:#f0b429;
+    --shadow:0 2px 14px rgba(0,0,0,.5);
+  }
   *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
-  body{background:#f0f2f5;max-width:520px;margin:auto;padding:12px 12px 80px}
-  h1{font-size:19px;color:#1a73e8;text-align:center;margin:10px 0}
+  body{background:var(--bg);color:var(--tx);max-width:520px;margin:auto;padding:12px 12px 80px;transition:background .3s,color .3s}
+  h1{font-size:18px;color:var(--acc);text-align:center;margin:10px 0;letter-spacing:.5px}
   h2{font-size:15px;margin-bottom:8px}
-  .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  label{display:block;font-size:12px;color:#555;margin:9px 0 3px;font-weight:bold}
-  input,select{width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-  button{padding:10px 14px;margin-top:8px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
-  .abu2{background:#888;font-size:12px;padding:7px 10px;margin:0}
-  .merah{background:#ea4335;margin:0}
-  .hijau{background:#34a853;margin:0}
+  .card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  label{display:block;font-size:12px;color:var(--sub);margin:9px 0 3px;font-weight:bold}
+  input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--inp);color:var(--tx)}
+  button{padding:11px 14px;margin-top:8px;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:var(--btnTx);border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer}
+  .abu2{background:var(--mut);color:#fff;font-size:12px;padding:8px 10px;margin:0}
+  .merah{background:var(--bad);color:#fff;margin:0}
+  .hijau{background:var(--ok);color:#fff;margin:0}
   .row{display:flex;gap:8px}.row input{flex:1}
-  .kecil{font-size:11px;color:#888;margin-top:3px}
+  .kecil{font-size:11px;color:var(--sub);margin-top:3px}
   .tebal{font-weight:bold}
-  .total{font-size:16px;font-weight:bold;color:#1a73e8;margin-top:10px}
-  .item{border-left:4px solid #fbbc04;padding:10px;background:#fafafa;border-radius:8px;margin-bottom:10px}
-  .item.disetujui{border-color:#34a853}.item.ditolak{border-color:#ea4335}
-  .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:#fbbc04}
-  .badge.disetujui{background:#34a853}.badge.ditolak{background:#ea4335}
+  .total{font-size:16px;font-weight:bold;color:var(--acc);margin-top:10px}
+  .item{border-left:4px solid var(--warn);padding:10px;background:var(--accSoft);border-radius:10px;margin-bottom:10px}
+  .item.disetujui{border-color:var(--ok)}.item.ditolak{border-color:var(--bad)}
+  .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:var(--warn)}
+  .badge.disetujui{background:var(--ok)}.badge.ditolak{background:var(--bad)}
   .aksi{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-  .k{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  .k b{display:block;font-size:20px;margin:4px 0}
-  .k span{font-size:11px;color:#666}
-  .kuning{border-top:4px solid #fbbc04}.hijau2{border-top:4px solid #34a853}
-  .biru{border-top:4px solid #1a73e8}.abu3{border-top:4px solid #888}
+  .k{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow)}
+  .k b{display:block;font-size:20px;margin:4px 0;color:var(--acc)}
+  .k span{font-size:11px;color:var(--sub)}
+  .kuning{border-top:4px solid var(--warn)}.hijau2{border-top:4px solid var(--ok)}
+  .biru{border-top:4px solid var(--acc)}.abu3{border-top:4px solid var(--mut)}
   .chip{display:flex;gap:6px;margin-bottom:10px}
-  .chip button{flex:1;padding:8px;background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;margin:0}
-  .chip button.aktif{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  .chip button{flex:1;padding:8px;background:var(--card);color:var(--sub);border:1px solid var(--line);border-radius:10px;font-size:12px;margin:0}
+  .chip button.aktif{background:var(--acc);color:var(--accTx);border-color:var(--acc)}
   table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-  td,th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}th{color:#888}
+  td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}th{color:var(--sub)}
   .tr{margin-top:10px}
-  .tr b{display:block;font-size:12px;color:#1a73e8;margin-bottom:4px}
+  .tr b{display:block;font-size:12px;color:var(--acc);margin-bottom:4px}
   .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .thumb{position:relative;width:70px;height:70px}
-  .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd;cursor:pointer}
-  .thumb span{position:absolute;top:-6px;right:-6px;background:#ea4335;color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:11px;cursor:pointer}
-  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;display:flex;border-top:1px solid #ddd;z-index:50}
-  .nav button{flex:1;background:none;border:none;padding:8px 2px;font-size:10px;color:#666;margin:0}
-  .nav button.aktif{color:#1a73e8;font-weight:bold}
+  .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+  .thumb span{position:absolute;top:-6px;right:-6px;background:var(--bad);color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:11px;cursor:pointer}
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:var(--card);display:flex;border-top:1px solid var(--line);z-index:50;box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+  .nav button{flex:1;background:none;border:none;padding:8px 2px;font-size:10px;color:var(--sub);margin:0}
+  .nav button.aktif{color:var(--acc);font-weight:bold}
   .ic{display:block;font-size:20px}
-  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;padding:16px;overflow:auto}
-  .modal .box{background:#fff;border-radius:12px;padding:16px;max-width:480px;margin:30px auto}
+  .tema{position:fixed;top:10px;right:10px;z-index:70;width:40px;height:40px;padding:0;margin:0;border-radius:50%;background:var(--card);color:var(--tx);border:1px solid var(--line);box-shadow:var(--shadow);font-size:18px}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;padding:16px;overflow:auto}
+  .modal .box{background:var(--card);color:var(--tx);border-radius:14px;padding:16px;max-width:480px;margin:30px auto}
   #viewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
   #viewer img{max-width:100%;max-height:90%}
   #reader video{width:100%!important;border-radius:8px}
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem('tema')==='gelap')document.body.classList.add('gelap')}catch(e){}</script>
+
+<button class="tema" id="btnTema" onclick="toggleTema()">🌙</button>
 
 <div id="gate">
   <div class="card" id="setup" style="display:none">
@@ -72,7 +90,7 @@
 </div>
 
 <div id="app" style="display:none">
-<h1>📋 Admin — Pengajuan Uang</h1>
+<h1>📋 ADMIN — PENGAJUAN UANG</h1>
 
 <div id="tdash"><div id="dash"></div></div>
 
@@ -123,6 +141,8 @@
   </div>
   <input id="cariBox" placeholder="🔍 Cari nama supir..." oninput="setCari(this.value)">
   <div id="listRiwayat"></div>
+  <button style="width:100%;background:var(--bad);color:#fff" onclick="resetSelesai()">🗑 Reset Data Selesai (Disetujui & Ditolak)</button>
+  <div class="kecil" style="text-align:center;margin-top:5px">Pengajuan yang masih MENUNGGU tidak akan terhapus.</div>
 </div>
 
 <div id="tmsupir" style="display:none">
@@ -141,7 +161,7 @@
 <div class="card">
   <h2>➕ Tambah Tujuan</h2>
   <label>Nama Tujuan</label><input id="tNama" placeholder="Jakarta">
-  <div class="kecil" style="margin-top:8px">Isi UJ (uang jalan) &amp; UB (per karton) tiap unit. Kosongkan jika tidak tersedia.</div>
+  <div class="kecil" style="margin-top:8px">Isi UJ (uang jalan) & UB (per karton) tiap unit. Kosongkan jika tidak tersedia.</div>
   <div class="tr"><b>Wing Box</b><div class="row"><input id="tUJ0" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB0" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
   <div class="tr"><b>Fuso Long</b><div class="row"><input id="tUJ1" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB1" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
   <div class="tr"><b>CDD</b><div class="row"><input id="tUJ2" type="number" inputmode="numeric" placeholder="UJ"><input id="tUB2" type="number" inputmode="numeric" placeholder="UB/karton"></div></div>
@@ -194,6 +214,44 @@ const UNITS = ['Wing Box','Fuso Long','CDD','CDE'];
 
 let daftarSupir=[], daftarTujuan=[], semuaData=[], fotoMap={}, mulaiInit=false;
 
+/* ===== TEMA SIANG/MALAM ===== */
+function terapTema(){
+  const g = document.body.classList.contains('gelap');
+  $('btnTema').textContent = g ? '☀️' : '🌙';
+}
+window.toggleTema = () => {
+  document.body.classList.toggle('gelap');
+  localStorage.setItem('tema', document.body.classList.contains('gelap')?'gelap':'terang');
+  terapTema();
+};
+terapTema();
+
+/* ===== NOTIFIKASI SUARA ===== */
+let audioCtx = null;
+['click','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{
+  try{ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+},{once:true}));
+function bunyiNotif(){
+  if (localStorage.getItem('suara')==='off') return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const nada = (t,f1,f2)=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='sine'; o.connect(g); g.connect(audioCtx.destination);
+      const t0=audioCtx.currentTime+t;
+      g.gain.setValueAtTime(0.0001,t0);
+      g.gain.exponentialRampToValueAtTime(0.35,t0+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+0.9);
+      o.frequency.setValueAtTime(f1,t0);
+      o.frequency.exponentialRampToValueAtTime(f2,t0+0.5);
+      o.start(t0); o.stop(t0+1);
+    };
+    nada(0,880,1174); nada(0.45,988,1318);
+    if (navigator.vibrate) navigator.vibrate([300,150,300]);
+  }catch(e){}
+}
+
 /* ===== GERBANG PASSWORD ===== */
 (async () => {
   const g = await getDoc(doc(db, 'pengaturan', 'admin'));
@@ -230,8 +288,13 @@ function bukaApp(){
     daftarTujuan.sort((a,b)=>a.nama.localeCompare(b.nama));
     isiDropdownTujuan(); renderTujuan();
   });
+
+  let nungguSebelumnya=0, sudahMuat=false;
   onSnapshot(query(collection(db,'pengajuan'), orderBy('waktu','desc')), s => {
     semuaData=[]; s.forEach(d=>semuaData.push({id:d.id,...d.data()}));
+    const nn = semuaData.filter(p=>p.status==='menunggu').length;
+    if (sudahMuat && nn > nungguSebelumnya) bunyiNotif();
+    nungguSebelumnya=nn; sudahMuat=true;
     renderRiwayat(); renderDash();
   });
   onSnapshot(collection(db,'foto'), s => {
@@ -245,6 +308,18 @@ window.tab = (n, btn) => {
   ['dash','input','riwayat','msupir','mtujuan'].forEach(x => $('t'+x).style.display = x===n ? 'block':'none');
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('aktif'));
   btn.classList.add('aktif');
+};
+
+/* ===== RESET DATA SELESAI ===== */
+window.resetSelesai = async () => {
+  const target = semuaData.filter(p=>p.status!=='menunggu');
+  if (!target.length) return alert('Tidak ada data selesai untuk direset.');
+  if (!confirm('Reset '+target.length+' pengajuan (disetujui/ditolak)?\n\n⚠️ Pengajuan yang masih MENUNGGU tidak akan terhapus.')) return;
+  for (const p of target) {
+    for (const f of (fotoMap[p.id]||[])) await deleteDoc(doc(db,'foto',f.id));
+    await deleteDoc(doc(db,'pengajuan',p.id));
+  }
+  alert('✅ '+target.length+' data selesai telah direset.');
 };
 
 /* ===== DROPDOWN INPUT ===== */
@@ -362,7 +437,8 @@ function itemHTML(p){
       ? `<button class="hijau" onclick="setStatus('${p.id}','disetujui')">✅ Setujui</button>
          <button class="merah" onclick="setStatus('${p.id}','ditolak')">❌ Tolak</button>` : '') +
     `<button class="abu2" onclick="bukaEdit('${p.id}')">✏️ Edit</button>
-     <button class="merah" onclick="hapus('${p.id}')">🗑 Hapus</button>`;
+     <button class="abu2" onclick="kirimWA('${p.id}')">💬 WA</button>
+     <button class="merah" onclick="hapus('${p.id}')">🗑</button>`;
   return `<div class="item ${p.status}">
     <span class="badge ${p.status}">${(p.status||'').toUpperCase()}</span>
     <div class="tebal">👤 ${esc(p.nama)} — ${esc(p.noPol)} (${esc(p.unit)})</div>
@@ -372,7 +448,7 @@ function itemHTML(p){
     <div class="kecil">Kas Bon Muat: -${rp(p.kasBon)} • Standby: ${rp(p.uangStandby)} • Tambahan: ${rp(p.uangTambahan)}</div>
     ${p.yangStandby?`<div class="kecil">Yang standby: ${esc(p.yangStandby)}</div>`:''}
     ${p.ket?`<div class="kecil">📝 ${esc(p.ket)}</div>`:''}
-    <div class="tebal" style="color:#1a73e8">Diterima supir: ${rp(p.diterima)}</div>
+    <div class="tebal" style="color:var(--acc)">Diterima supir: ${rp(p.diterima)}</div>
     <div class="thumbs">${thumbs}</div>
     <div class="kecil">${tgl}</div>
     <div class="aksi">${aksi}</div>
@@ -383,6 +459,23 @@ window.hapus = async id => {
   if (!confirm('Hapus permanen pengajuan ini?')) return;
   for (const f of (fotoMap[id]||[])) await deleteDoc(doc(db,'foto',f.id));
   await deleteDoc(doc(db,'pengajuan',id));
+};
+window.kirimWA = id => {
+  const p = semuaData.find(x=>x.id===id); if (!p) return;
+  const txt = `*PENGAJUAN UANG*
+👤 ${p.nama}
+🚚 ${p.noPol} (${p.unit})
+📍 ${p.tujuan}
+🧾 No. DN: ${p.noDN||'-'}
+📦 Qty: ${p.qty||0} karton
+----------------------
+Uang Jalan: ${rp(p.uangJalan)}
+Kas Bon Muat: -${rp(p.kasBon)}
+Uang Standby: ${rp(p.uangStandby)}
+Uang Tambahan: ${rp(p.uangTambahan)}
+Uang Bongkar: ${rp(p.uangBongkar)}
+*DITERIMA: ${rp(p.diterima)}*`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt), '_blank');
 };
 window.lihat = id => {
   const f = Object.values(fotoMap).flat().find(x=>x.id===id);
@@ -445,7 +538,7 @@ window.tutupModal = () => { $('modal').style.display='none'; editId=null; };
 /* ===== MASTER SUPIR ===== */
 function renderSupir(){
   $('listSupir').innerHTML = daftarSupir.length ? daftarSupir.map(s=>`
-    <div class="item" style="border-color:#1a73e8">
+    <div class="item" style="border-color:var(--acc)">
       <div class="tebal">${esc(s.nama)} ${s.sumber==='supir'?'<span class="kecil">(daftar sendiri)</span>':''}</div>
       <div class="kecil">${esc(s.noPol)} • ${esc(s.unit)}</div>
       <div class="aksi">
@@ -487,12 +580,12 @@ window.hapusSupir = async id => {
   if (confirm('Hapus supir ini?')) await deleteDoc(doc(db,'supir',id));
 };
 
-/* ===== MASTER TUJUAN (tarif per unit) ===== */
+/* ===== MASTER TUJUAN ===== */
 function renderTujuan(){
   $('listTujuan').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>{
     const rows = (t.tarif||[]).map(x=>
       `<tr><td>${esc(x.unit)}</td><td>${rp(x.uj)}</td><td>${rp(x.ub)}/ktn</td></tr>`).join('');
-    return `<div class="item" style="border-color:#1a73e8">
+    return `<div class="item" style="border-color:var(--acc)">
       <div class="tebal">📍 ${esc(t.nama)}</div>
       ${rows?`<table><tr><th>Unit</th><th>UJ</th><th>UB</th></tr>${rows}</table>`:'<div class="kecil">Belum ada tarif.</div>'}
       <div class="aksi">
@@ -548,6 +641,7 @@ function renderDash(){
   const ok = semuaData.filter(p=>p.status!=='ditolak');
   const nunggu = semuaData.filter(p=>p.status==='menunggu');
   const setujui = semuaData.filter(p=>p.status==='disetujui');
+  const selesai = semuaData.filter(p=>p.status!=='menunggu');
   const bulan = ok.filter(p=>p.waktu?.toDate?.() >= awal);
   const totD = a => a.reduce((s,p)=>s+(p.diterima||0),0);
   const totB = a => a.reduce((s,p)=>s+(p.uangBongkar||0),0);
@@ -555,6 +649,7 @@ function renderDash(){
   bulan.forEach(p=>{const k=p.nama||'?';m[k]=m[k]||{n:0,d:0,b:0};m[k].n++;m[k].d+=p.diterima||0;m[k].b+=p.uangBongkar||0;});
   const rows = Object.entries(m).sort().map(([k,v])=>
     `<tr><td>${esc(k)}</td><td>${v.n}</td><td>${rp(v.d)}</td><td>${rp(v.b)}</td></tr>`).join('');
+  const suara = localStorage.getItem('suara')==='off' ? 'OFF' : 'ON';
   $('dash').innerHTML = `
     <div class="grid">
       <div class="k kuning">⏳ Menunggu<b>${nunggu.length}</b><span>Total ${rp(totD(nunggu))}</span></div>
@@ -565,8 +660,18 @@ function renderDash(){
     <div class="card"><h2>💰 Pengeluaran per Supir (bulan ini)</h2>
       ${rows?`<table><tr><th>Supir</th><th>Trip</th><th>Diterima</th><th>Bongkar</th></tr>${rows}</table>`:'<div class="kecil">Belum ada.</div>'}
     </div>
-    <button class="abu2" onclick="gantiPw()">🔑 Ganti Password Admin</button>`;
+    <div class="aksi">
+      <button class="abu2" onclick="toggleSuara()">🔔 Suara: ${suara}</button>
+      <button class="abu2" onclick="gantiPw()">🔑 Ganti Password</button>
+    </div>
+    <button style="width:100%;background:var(--bad);color:#fff;margin-top:10px" onclick="resetSelesai()">🗑 Reset Data Selesai (${selesai.length})</button>
+    <div class="kecil" style="text-align:center;margin-top:5px">Hapus data disetujui/ditolak. Yang menunggu tetap aman.</div>`;
 }
+window.toggleSuara = () => {
+  const off = localStorage.getItem('suara')==='off';
+  localStorage.setItem('suara', off?'on':'off');
+  renderDash();
+};
 window.gantiPw = () => {
   $('modalBody').innerHTML = `
     <h2>🔑 Ganti Password Admin</h2>
