@@ -35,7 +35,6 @@
   .chip{display:flex;gap:6px;margin-bottom:10px}
   .chip button{flex:1;padding:8px;background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;margin:0}
   .chip button.aktif{background:#1a73e8;color:#fff;border-color:#1a73e8}
-  #cariBox{margin-bottom:12px}
   table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
   td,th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}th{color:#888}
   .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -129,7 +128,7 @@
   <h2>➕ Tambah Supir</h2>
   <label>Nama</label><input id="sNama">
   <label>No. Pol</label><input id="sNopol" placeholder="B 1234 ABC">
-  <label>Unit</label><input id="sUnit" list="dlUnit" placeholder="Tronton / CDD / Engkel">
+  <label>Unit</label><input id="sUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CFD / CDE">
   <label>Password</label><input id="sPw">
   <button onclick="tambahSupir()">Simpan Supir</button>
 </div>
@@ -140,7 +139,7 @@
 <div class="card">
   <h2>➕ Tambah Tujuan</h2>
   <label>Nama Tujuan</label><input id="tNama" placeholder="Jakarta">
-  <label>Unit</label><input id="tUnit" list="dlUnit" placeholder="Tronton">
+  <label>Unit</label><input id="tUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CFD / CDE">
   <label>Uang Jalan (Rp)</label><input id="tUJ" type="number" inputmode="numeric">
   <label>UB per Karton (Rp)</label><input id="tUBK" type="number" inputmode="numeric" placeholder="500">
   <label>UB per Mobil (Rp, untuk qty ≥ 1000)</label><input id="tUBM" type="number" inputmode="numeric" placeholder="500000">
@@ -150,8 +149,8 @@
 </div>
 
 <datalist id="dlUnit">
-  <option>Tronton</option><option>CDD</option><option>Engkel</option>
-  <option>Fuso</option><option>CDE</option>
+  <option>Wing Box</option><option>Fuso Long</option><option>CFD</option>
+  <option>CDE</option>
 </datalist>
 
 <nav class="nav">
@@ -240,7 +239,7 @@ function bukaApp(){
 /* ===== NAVIGASI ===== */
 window.tab = (n, btn) => {
   ['dash','input','riwayat','msupir','mtujuan'].forEach(x => $('t'+x).style.display = x===n ? 'block':'none');
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('aktif'));
+  document.querySelectorAll('.nav b utton').forEach(b=>b.classList.remove('aktif'));
   btn.classList.add('aktif');
 };
 
