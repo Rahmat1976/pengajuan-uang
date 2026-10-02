@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Pengajuan Uang</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+  body{background:#f0f2f5;max-width:520px;margin:auto;padding:12px 12px 80px}
+  h1{font-size:19px;color:#1a73e8;text-align:center;margin:10px 0}
+  h2{font-size:15px;margin-bottom:8px}
+  .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  label{display:block;font-size:12px;color:#555;margin:9px 0 3px;font-weight:bold}
+  input,select{width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+  button{padding:10px 14px;margin-top:8px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
+  .abu2{background:#888;font-size:12px;padding:7px 10px;margin:0}
+  .merah{background:#ea4335;margin:0}
+  .hijau{background:#34a853;margin:0}
+  .row{display:flex;gap:8px}.row input{flex:1}
+  .kecil{font-size:11px;color:#888;margin-top:3px}
+  .tebal{font-weight:bold}
+  .total{font-size:16px;font-weight:bold;color:#1a73e8;margin-top:10px}
+  .item{border-left:4px solid #fbbc04;padding:10px;background:#fafafa;border-radius:8px;margin-bottom:10px}
+  .item.disetujui{border-color:#34a853}.item.ditolak{border-color:#ea4335}
+  .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:#fbbc04}
+  .badge.disetujui{background:#34a853}.badge.ditolak{background:#ea4335}
+  .aksi{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .k{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .k b{display:block;font-size:20px;margin:4px 0}
+  .k span{font-size:11px;color:#666}
+  .kuning{border-top:4px solid #fbbc04}.hijau2{border-top:4px solid #34a853}
+  .biru{border-top:4px solid #1a73e8}.abu3{border-top:4px solid #888}
+  .chip{display:flex;gap:6px;margin-bottom:10px}
+  .chip button{flex:1;padding:8px;background:#fff;color:#555;border:1px solid #ddd;border-radius:8px;font-size:12px;margin:0}
+  .chip button.aktif{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  #cariBox{margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+  td,th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}th{color:#888}
+  .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .thumb{position:relative;width:70px;height:70px}
+  .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd;cursor:pointer}
+  .thumb span{position:absolute;top:-6px;right:-6px;background:#ea4335;color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:11px;cursor:pointer}
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;display:flex;border-top:1px solid #ddd;z-index:50}
+  .nav button{flex:1;background:none;border:none;padding:8px 2px;font-size:10px;color:#666;margin:0}
+  .nav button.aktif{color:#1a73e8;font-weight:bold}
+  .ic{display:block;font-size:20px}
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;padding:16px;overflow:auto}
+  .modal .box{background:#fff;border-radius:12px;padding:16px;max-width:480px;margin:30px auto}
+  #viewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
+  #viewer img{max-width:100%;max-height:90%}
+  #reader video{width:100%!important;border-radius:8px}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="card" id="setup" style="display:none">
+    <h2>🔐 Buat Password Admin</h2>
+    <div class="kecil">Hanya sekali, saat pertama kali dibuka.</div>
+    <label>Password Baru</label><input id="pw1" type="password">
+    <label>Ulangi Password</label><input id="pw2" type="password">
+    <button onclick="buatPassword()">Simpan & Masuk</button>
+  </div>
+  <div class="card" id="login" style="display:none">
+    <h2>🔐 Login Admin</h2>
+    <label>Password</label><input id="lpw" type="password">
+    <button onclick="loginAdmin()">Masuk</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+<h1>📋 Admin — Pengajuan Uang</h1>
+
+<div id="tdash"><div id="dash"></div></div>
+
+<div id="tinput" style="display:none">
+<div class="card">
+  <h2>➕ Input Pengajuan</h2>
+  <label>Nama Supir</label>
+  <select id="fSupir" onchange="pilihSupir()"><option value="">-- Pilih Supir --</option></select>
+  <label>No. Pol</label><input id="fNopol" readonly>
+  <label>Unit</label><input id="fUnit" readonly>
+  <label>Tujuan</label>
+  <select id="fTujuan" onchange="pilihTujuan()"><option value="">-- Pilih Tujuan --</option></select>
+  <label>Uang Jalan (Rp)</label><input id="fUJ" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>No. DN</label>
+  <div class="row">
+    <input id="fDN" placeholder="Scan barcode atau ketik manual">
+    <button class="abu2" style="padding:9px" onclick="mulaiScan()">📷 Scan</button>
+  </div>
+  <div class="kecil">Cadangan: <a href="https://www.prepostseo.com/id/scan-barcode-online" target="_blank">scan online</a> lalu paste</div>
+  <div id="scanBox" style="display:none;margin-top:8px">
+    <div id="reader"></div>
+    <button class="abu2" onclick="stopScan()">Tutup Scanner</button>
+  </div>
+  <label>Qty Karton</label><input id="fQty" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>UB / Karton (Rp)</label><input id="fUBK" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>UB / Mobil (Rp)</label><input id="fUBM" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="fBongkar" type="number" inputmode="numeric" oninput="rehitung()">
+  <div class="kecil">Otomatis: qty &lt; 1000 → qty × UB karton • qty ≥ 1000 → UB mobil</div>
+  <label>Yang Standby</label><input id="fStandby" placeholder="Nama / ket. yang standby">
+  <label>Uang Standby (Rp)</label><input id="fUStandby" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>Uang Kas Bon Muat (dipotong dari uang jalan)</label><input id="fKasbon" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>Uang Tambahan (Rp)</label><input id="fTambahan" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>Keterangan Uang Tambahan</label><input id="fKet" placeholder="Contoh: parkir tronton belum diklem">
+  <div class="total">Diterima supir: <span id="prevDiterima">Rp 0</span></div>
+  <label>Foto Surat Jalan (maks 8, dikompres otomatis)</label>
+  <input type="file" accept="image/*" multiple onchange="pilihFoto(event)">
+  <div id="prevFoto" class="thumbs"></div>
+  <button onclick="simpan()">💾 Simpan Pengajuan</button>
+</div>
+</div>
+
+<div id="triwayat" style="display:none">
+  <div class="chip">
+    <button class="aktif" onclick="setF('semua',this)">Semua</button>
+    <button onclick="setF('menunggu',this)">Menunggu</button>
+    <button onclick="setF('disetujui',this)">Disetujui</button>
+    <button onclick="setF('ditolak',this)">Ditolak</button>
+  </div>
+  <input id="cariBox" placeholder="🔍 Cari nama supir..." oninput="setCari(this.value)">
+  <div id="listRiwayat"></div>
+</div>
+
+<div id="tmsupir" style="display:none">
+<div class="card">
+  <h2>➕ Tambah Supir</h2>
+  <label>Nama</label><input id="sNama">
+  <label>No. Pol</label><input id="sNopol" placeholder="B 1234 ABC">
+  <label>Unit</label><input id="sUnit" list="dlUnit" placeholder="Tronton / CDD / Engkel">
+  <label>Password</label><input id="sPw">
+  <button onclick="tambahSupir()">Simpan Supir</button>
+</div>
+<div class="card"><h2>👤 Master Supir</h2><div id="listSupir"></div></div>
+</div>
+
+<div id="tmtujuan" style="display:none">
+<div class="card">
+  <h2>➕ Tambah Tujuan</h2>
+  <label>Nama Tujuan</label><input id="tNama" placeholder="Jakarta">
+  <label>Unit</label><input id="tUnit" list="dlUnit" placeholder="Tronton">
+  <label>Uang Jalan (Rp)</label><input id="tUJ" type="number" inputmode="numeric">
+  <label>UB per Karton (Rp)</label><input id="tUBK" type="number" inputmode="numeric" placeholder="500">
+  <label>UB per Mobil (Rp, untuk qty ≥ 1000)</label><input id="tUBM" type="number" inputmode="numeric" placeholder="500000">
+  <button onclick="tambahTujuan()">Simpan Tujuan</button>
+</div>
+<div class="card"><h2>📍 Master Tujuan</h2><div id="listTujuan"></div></div>
+</div>
+
+<datalist id="dlUnit">
+  <option>Tronton</option><option>CDD</option><option>Engkel</option>
+  <option>Fuso</option><option>CDE</option>
+</datalist>
+
+<nav class="nav">
+  <button class="aktif" onclick="tab('dash',this)"><span class="ic">🏠</span>Dashboard</button>
+  <button onclick="tab('input',this)"><span class="ic">➕</span>Input</button>
+  <button onclick="tab('riwayat',this)"><span class="ic">🕓</span>Riwayat</button>
+  <button onclick="tab('msupir',this)"><span class="ic">👤</span>Supir</button>
+  <button onclick="tab('mtujuan',this)"><span class="ic">📍</span>Tujuan</button>
+</nav>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)tutupModal()"><div class="box" id="modalBody"></div></div>
+<div id="viewer" onclick="tutupViewer()"><img id="viewerImg"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
+  onSnapshot, query, where, orderBy, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAn9tbH8O36Tzzown4w5Ha0GAjkm_ihoPQ",
+  authDomain: "rahmat-smj.firebaseapp.com",
+  projectId: "rahmat-smj",
+  storageBucket: "rahmat-smj.firebasestorage.app",
+  messagingSenderId: "79729482328",
+  appId: "1:79729482328:web:c0d486608f531517e1482d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function hitungUB(qty, ubk, ubm){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ubk)||0);if(qty>=1000)return Number(ubm)||0;return 0;}
+const terima = p => (p.uangJalan||0)-(p.kasBon||0)+(p.uangStandby||0)+(p.uangTambahan||0);
+
+let daftarSupir=[], daftarTujuan=[], semuaData=[], fotoMap={}, mulaiInit=false;
+
+/* ===== GERBANG PASSWORD ===== */
+(async () => {
+  const g = await getDoc(doc(db, 'pengaturan', 'admin'));
+  if (!g.exists()) { $('setup').style.display = 'block'; }
+  else if (localStorage.getItem('adminOk') === '1') { bukaApp(); }
+  else { $('login').style.display = 'block'; }
+})();
+
+window.buatPassword = async () => {
+  const a=$('pw1').value, b=$('pw2').value;
+  if (a.length < 4) return alert('Password minimal 4 karakter');
+  if (a !== b) return alert('Konfirmasi password tidak sama');
+  await setDoc(doc(db,'pengaturan','admin'), { password: await sha256(a) });
+  localStorage.setItem('adminOk','1'); bukaApp();
+};
+window.loginAdmin = async () => {
+  const g = await getDoc(doc(db,'pengaturan','admin'));
+  if (await sha256($('lpw').value) === g.data().password) {
+    localStorage.setItem('adminOk','1'); bukaApp();
+  } else alert('Password salah');
+};
+
+function bukaApp(){
+  $('gate').style.display='none'; $('app').style.display='block';
+  if (mulaiInit) return; mulaiInit = true;
+
+  onSnapshot(collection(db,'supir'), s => {
+    daftarSupir=[]; s.forEach(d=>daftarSupir.push({id:d.id,...d.data()}));
+    daftarSupir.sort((a,b)=>a.nama.localeCompare(b.nama));
+    isiDropdownSupir(); renderSupir(); renderDash();
+  });
+  onSnapshot(collection(db,'tujuan'), s => {
+    daftarTujuan=[]; s.forEach(d=>daftarTujuan.push({id:d.id,...d.data()}));
+    isiDropdownTujuan(); renderTujuan();
+  });
+  onSnapshot(query(collection(db,'pengajuan'), orderBy('waktu','desc')), s => {
+    semuaData=[]; s.forEach(d=>semuaData.push({id:d.id,...d.data()}));
+    renderRiwayat(); renderDash();
+  });
+  onSnapshot(collection(db,'foto'), s => {
+    fotoMap={}; s.forEach(d=>{const f=d.data();(fotoMap[f.pid]=fotoMap[f.pid]||[]).push({id:d.id,...f});});
+    renderRiwayat();
+  });
+}
+
+/* ===== NAVIGASI ===== */
+window.tab = (n, btn) => {
+  ['dash','input','riwayat','msupir','mtujuan'].forEach(x => $('t'+x).style.display = x===n ? 'block':'none');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('aktif'));
+  btn.classList.add('aktif');
+};
+
+/* ===== DROPDOWN INPUT ===== */
+function isiDropdownSupir(){
+  $('fSupir').innerHTML = '<option value="">-- Pilih Supir --</option>' +
+    daftarSupir.map(s=>`<option value="${s.id}">${esc(s.nama)} (${esc(s.noPol)})</option>`).join('');
+}
+window.pilihSupir = () => {
+  const s = daftarSupir.find(x=>x.id===$('fSupir').value);
+  $('fNopol').value = s ? s.noPol : '';
+  $('fUnit').value = s ? s.unit : '';
+  isiDropdownTujuan();
+};
+function isiDropdownTujuan(){
+  const u = ($('fUnit').value||'').toLowerCase();
+  const arr = [...daftarTujuan].sort((a,b)=>
+    ((a.unit?.toLowerCase()===u?0:1)-(b.unit?.toLowerCase()===u?0:1)) || a.nama.localeCompare(b.nama));
+  $('fTujuan').innerHTML = '<option value="">-- Pilih Tujuan --</option>' +
+    arr.map(t=>`<option value="${t.id}">${esc(t.nama)} — ${esc(t.unit)} (UJ ${rp(t.uangJalan)})</option>`).join('');
+}
+window.pilihTujuan = () => {
+  const t = daftarTujuan.find(x=>x.id===$('fTujuan').value);
+  if (!t) return;
+  $('fUJ').value = t.uangJalan||0;
+  $('fUBK').value = t.ubKarton||0;
+  $('fUBM').value = t.ubMobil||0;
+  rehitung();
+};
+window.rehitung = () => {
+  $('fBongkar').value = hitungUB($('fQty').value, $('fUBK').value, $('fUBM').value);
+  $('prevDiterima').textContent = rp(
+    (Number($('fUJ').value)||0)-(Number($('fKasbon').value)||0)
+    +(Number($('fUStandby').value)||0)+(Number($('fTambahan').value)||0));
+};
+
+/* ===== FOTO ===== */
+let fileFoto = [];
+function kompres(file){return new Promise(res=>{
+  const r=new FileReader();
+  r.onload=()=>{const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;const mw=1000;
+      if(w>mw){h=h*mw/w;w=mw;}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      let out=c.toDataURL('image/jpeg',0.5);
+      if(out.length>300000){w=700;h=img.height*700/img.width;
+        const c2=document.createElement('canvas');c2.width=w;c2.height=h;
+        c2.getContext('2d').drawImage(img,0,0,w,h);out=c2.toDataURL('image/jpeg',0.4);}
+      res(out);};
+    img.src=r.result;};
+  r.readAsDataURL(file);});}
+window.pilihFoto = async e => {
+  for (const f of e.target.files) {
+    if (fileFoto.length >= 8) { alert('Maksimal 8 foto'); break; }
+    fileFoto.push(await kompres(f));
+  }
+  e.target.value=''; renderFoto();
+};
+function renderFoto(){ $('prevFoto').innerHTML = fileFoto.map((d,i)=>
+  `<div class="thumb"><img src="${d}"><span onclick="hapusFoto(${i})">✕</span></div>`).join(''); }
+window.hapusFoto = i => { fileFoto.splice(i,1); renderFoto(); };
+
+/* ===== SIMPAN PENGAJUAN ===== */
+window.simpan = async () => {
+  const s = daftarSupir.find(x=>x.id===$('fSupir').value);
+  const t = daftarTujuan.find(x=>x.id===$('fTujuan').value);
+  if (!s) return alert('Pilih supir!');
+  if (!t) return alert('Pilih tujuan!');
+  const uj=Number($('fUJ').value)||0, kb=Number($('fKasbon').value)||0,
+        us=Number($('fUStandby').value)||0, tb=Number($('fTambahan').value)||0;
+  const data = {
+    supirId:s.id, nama:s.nama, noPol:s.noPol, unit:s.unit,
+    tujuanId:t.id, tujuan:t.nama+' - '+t.unit, unitTujuan:t.unit,
+    uangJalan:uj, ubKarton:Number($('fUBK').value)||0, ubMobil:Number($('fUBM').value)||0,
+    qty:Number($('fQty').value)||0, uangBongkar:Number($('fBongkar').value)||0,
+    noDN:$('fDN').value.trim(), yangStandby:$('fStandby').value.trim(), uangStandby:us,
+    kasBon:kb, uangTambahan:tb, ket:$('fKet').value.trim(),
+    diterima: uj-kb+us+tb, status:'menunggu', sumber:'admin', waktu:serverTimestamp()
+  };
+  try {
+    const ref = await addDoc(collection(db,'pengajuan'), data);
+    for (const f of fileFoto) await addDoc(collection(db,'foto'), {pid:ref.id, data:f});
+    alert('✅ Pengajuan tersimpan!');
+    ['fDN','fQty','fBongkar','fStandby','fUStandby','fKasbon','fTambahan','fKet','fUJ','fUBK','fUBM','fNopol','fUnit']
+      .forEach(x=>$(x).value='');
+    $('fSupir').value=''; $('fTujuan').value=''; fileFoto=[]; renderFoto();
+    $('prevDiterima').textContent='Rp 0'; isiDropdownTujuan();
+  } catch(err){ alert('Gagal: '+err.message); }
+};
+
+/* ===== RIWAYAT ===== */
+let fStatus='semua', cari='';
+window.setF = (f, btn) => {
+  fStatus=f;
+  document.querySelectorAll('.chip button').forEach(b=>b.classList.remove('aktif'));
+  btn.classList.add('aktif'); renderRiwayat();
+};
+window.setCari = v => { cari=v.toLowerCase(); renderRiwayat(); };
+function renderRiwayat(){
+  let arr = fStatus==='semua' ? semuaData : semuaData.filter(p=>p.status===fStatus);
+  if (cari) arr = arr.filter(p=>(p.nama||'').toLowerCase().includes(cari));
+  $('listRiwayat').innerHTML = arr.length ? arr.map(itemHTML).join('')
+    : '<div class="card">Tidak ada data.</div>';
+}
+function itemHTML(p){
+  const tgl = p.waktu?.toDate?.()?.toLocaleString('id-ID') ?? '...';
+  const thumbs = (fotoMap[p.id]||[]).map(f=>`<img class="ft" src="${f.data}" onclick="lihat('${f.id}')">`).join('');
+  const aksi =
+    (p.status==='menunggu'
+      ? `<button class="hijau" onclick="setStatus('${p.id}','disetujui')">✅ Setujui</button>
+         <button class="merah" onclick="setStatus('${p.id}','ditolak')">❌ Tolak</button>` : '') +
+    `<button class="abu2" onclick="bukaEdit('${p.id}')">✏️ Edit</button>
+     <button class="merah" onclick="hapus('${p.id}')">🗑 Hapus</button>`;
+  return `<div class="item ${p.status}">
+    <span class="badge ${p.status}">${(p.status||'').toUpperCase()}</span>
+    <div class="tebal">👤 ${esc(p.nama)} — ${esc(p.noPol)} (${esc(p.unit)})</div>
+    <div class="tebal">📍 ${esc(p.tujuan)}</div>
+    <div class="kecil">No. DN: ${esc(p.noDN)||'-'} • Qty: ${p.qty||0} karton</div>
+    <div class="kecil">Uang Jalan: ${rp(p.uangJalan)} • Bongkar: ${rp(p.uangBongkar)}</div>
+    <div class="kecil">Kas Bon Muat: -${rp(p.kasBon)} • Standby: ${rp(p.uangStandby)} • Tambahan: ${rp(p.uangTambahan)}</div>
+    ${p.yangStandby?`<div class="kecil">Yang standby: ${esc(p.yangStandby)}</div>`:''}
+    ${p.ket?`<div class="kecil">📝 ${esc(p.ket)}</div>`:''}
+    <div class="tebal" style="color:#1a73e8">Diterima supir: ${rp(p.diterima)}</div>
+    <div class="thumbs">${thumbs}</div>
+    <div class="kecil">${tgl}</div>
+    <div class="aksi">${aksi}</div>
+  </div>`;
+}
+window.setStatus = (id, st) => updateDoc(doc(db,'pengajuan',id), {status:st});
+window.hapus = async id => {
+  if (!confirm('Hapus permanen pengajuan ini?')) return;
+  for (const f of (fotoMap[id]||[])) await deleteDoc(doc(db,'foto',f.id));
+  await deleteDoc(doc(db,'pengajuan',id));
+};
+window.lihat = id => {
+  const f = Object.values(fotoMap).flat().find(x=>x.id===id);
+  if (!f) return;
+  $('viewerImg').src = f.data; $('viewer').style.display='flex';
+};
+window.tutupViewer = () => $('viewer').style.display='none';
+
+/* ===== MODAL EDIT PENGAJUAN ===== */
+let editId = null;
+window.bukaEdit = id => {
+  const p = semuaData.find(x=>x.id===id); if (!p) return;
+  editId = id;
+  $('modalBody').innerHTML = `
+    <h2>✏️ Edit Pengajuan</h2>
+    <label>Qty Karton</label><input id="eQty" type="number" value="${p.qty||0}" oninput="eHitung()">
+    <label>No. DN</label><input id="eDN" value="${esc(p.noDN)}">
+    <label>Uang Jalan</label><input id="eUJ" type="number" value="${p.uangJalan||0}" oninput="eHitung()">
+    <label>UB / Karton</label><input id="eUBK" type="number" value="${p.ubKarton||0}" oninput="eHitung()">
+    <label>UB / Mobil</label><input id="eUBM" type="number" value="${p.ubMobil||0}" oninput="eHitung()">
+    <label>Uang Bongkar</label><input id="eBongkar" type="number" value="${p.uangBongkar||0}">
+    <label>Yang Standby</label><input id="eStandby" value="${esc(p.yangStandby)}">
+    <label>Uang Standby</label><input id="eUS" type="number" value="${p.uangStandby||0}" oninput="eHitung()">
+    <label>Kas Bon Muat</label><input id="eKB" type="number" value="${p.kasBon||0}" oninput="eHitung()">
+    <label>Uang Tambahan</label><input id="eT" type="number" value="${p.uangTambahan||0}" oninput="eHitung()">
+    <label>Keterangan Tambahan</label><input id="eKet" value="${esc(p.ket)}">
+    <label>Status</label>
+    <select id="eSt">
+      <option value="menunggu" ${p.status==='menunggu'?'selected':''}>Menunggu</option>
+      <option value="disetujui" ${p.status==='disetujui'?'selected':''}>Disetujui</option>
+      <option value="ditolak" ${p.status==='ditolak'?'selected':''}>Ditolak</option>
+    </select>
+    <div class="kecil">Diterima: <b id="eDiterima"></b></div>
+    <button onclick="simpanEdit()">💾 Simpan Perubahan</button>
+    <button class="abu2" onclick="tutupModal()">Batal</button>`;
+  $('modal').style.display='block'; eHitung();
+};
+window.eHitung = () => {
+  $('eBongkar').value = hitungUB($('eQty').value,$('eUBK').value,$('eUBM').value);
+  $('eDiterima').textContent = rp(
+    (Number($('eUJ').value)||0)-(Number($('eKB').value)||0)
+    +(Number($('eUS').value)||0)+(Number($('eT').value)||0));
+};
+window.simpanEdit = async () => {
+  const uj=Number($('eUJ').value)||0, kb=Number($('eKB').value)||0,
+        us=Number($('eUS').value)||0, tb=Number($('eT').value)||0;
+  await updateDoc(doc(db,'pengajuan',editId), {
+    noDN:$('eDN').value.trim(), qty:Number($('eQty').value)||0,
+    uangJalan:uj, ubKarton:Number($('eUBK').value)||0, ubMobil:Number($('eUBM').value)||0,
+    uangBongkar:Number($('eBongkar').value)||0,
+    yangStandby:$('eStandby').value.trim(), uangStandby:us,
+    kasBon:kb, uangTambahan:tb, ket:$('eKet').value.trim(),
+    status:$('eSt').value, diterima:uj-kb+us+tb
+  });
+  tutupModal();
+};
+window.tutupModal = () => { $('modal').style.display='none'; editId=null; };
+
+/* ===== MASTER SUPIR ===== */
+function renderSupir(){
+  $('listSupir').innerHTML = daftarSupir.length ? daftarSupir.map(s=>`
+    <div class="item" style="border-color:#1a73e8">
+      <div class="tebal">${esc(s.nama)} ${s.sumber==='supir'?'<span class="kecil">(daftar sendiri)</span>':''}</div>
+      <div class="kecil">${esc(s.noPol)} • ${esc(s.unit)}</div>
+      <div class="aksi">
+        <button class="abu2" onclick="editSupir('${s.id}')">✏️ Edit</button>
+        <button class="merah" onclick="hapusSupir('${s.id}')">🗑</button>
+      </div>
+    </div>`).join('') : 'Belum ada supir.';
+}
+window.tambahSupir = async () => {
+  const nama=$('sNama').value.trim(), pw=$('sPw').value;
+  if (!nama || !pw) return alert('Nama dan password wajib diisi!');
+  if (daftarSupir.some(x=>x.nama.toLowerCase()===nama.toLowerCase())) return alert('Nama sudah terdaftar!');
+  await addDoc(collection(db,'supir'), {
+    nama, noPol:$('sNopol').value.trim(), unit:$('sUnit').value.trim(),
+    password:await sha256(pw), sumber:'admin', dibuat:serverTimestamp()
+  });
+  ['sNama','sNopol','sUnit','sPw'].forEach(x=>$(x).value='');
+  alert('✅ Supir ditambahkan!');
+};
+window.editSupir = id => {
+  const s = daftarSupir.find(x=>x.id===id);
+  $('modalBody').innerHTML = `
+    <h2>✏️ Edit Supir</h2>
+    <label>Nama</label><input id="eSN" value="${esc(s.nama)}">
+    <label>No. Pol</label><input id="eSP" value="${esc(s.noPol)}">
+    <label>Unit</label><input id="eSU" value="${esc(s.unit)}">
+    <label>Password Baru (kosongkan jika tidak diganti)</label><input id="eSW" type="password">
+    <button onclick="simpanSupir('${id}')">💾 Simpan</button>
+    <button class="abu2" onclick="tutupModal()">Batal</button>`;
+  $('modal').style.display='block';
+};
+window.simpanSupir = async id => {
+  const u = { nama:$('eSN').value.trim(), noPol:$('eSP').value.trim(), unit:$('eSU').value.trim() };
+  if ($('eSW').value) u.password = await sha256($('eSW').value);
+  await updateDoc(doc(db,'supir',id), u);
+  tutupModal();
+};
+window.hapusSupir = async id => {
+  if (confirm('Hapus supir ini?')) await deleteDoc(doc(db,'supir',id));
+};
+
+/* ===== MASTER TUJUAN ===== */
+function renderTujuan(){
+  $('listTujuan').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>`
+    <div class="item" style="border-color:#1a73e8">
+      <div class="tebal">${esc(t.nama)} — ${esc(t.unit)}</div>
+      <div class="kecil">UJ: ${rp(t.uangJalan)} • UB karton: ${rp(t.ubKarton)} • UB mobil: ${rp(t.ubMobil)}</div>
+      <div class="aksi">
+        <button class="abu2" onclick="editTujuan('${t.id}')">✏️ Edit</button>
+        <button class="merah" onclick="hapusTujuan('${t.id}')">🗑</button>
+      </div>
+    </div>`).join('') : 'Belum ada tujuan.';
+}
+window.tambahTujuan = async () => {
+  const nama=$('tNama').value.trim();
+  if (!nama) return alert('Isi nama tujuan!');
+  await addDoc(collection(db,'tujuan'), {
+    nama, unit:$('tUnit').value.trim(),
+    uangJalan:Number($('tUJ').value)||0,
+    ubKarton:Number($('tUBK').value)||0,
+    ubMobil:Number($('tUBM').value)||0
+  });
+  ['tNama','tUnit','tUJ','tUBK','tUBM'].forEach(x=>$(x).value='');
+  alert('✅ Tujuan ditambahkan!');
+};
+window.editTujuan = id => {
+  const t = daftarTujuan.find(x=>x.id===id);
+  $('modalBody').innerHTML = `
+    <h2>✏️ Edit Tujuan</h2>
+    <label>Nama</label><input id="eTN" value="${esc(t.nama)}">
+    <label>Unit</label><input id="eTU" value="${esc(t.unit)}">
+    <label>Uang Jalan</label><input id="eTUJ" type="number" value="${t.uangJalan||0}">
+    <label>UB / Karton</label><input id="eTUBK" type="number" value="${t.ubKarton||0}">
+    <label>UB / Mobil</label><input id="eTUBM" type="number" value="${t.ubMobil||0}">
+    <button onclick="simpanTujuan('${id}')">💾 Simpan</button>
+    <button class="abu2" onclick="tutupModal()">Batal</button>`;
+  $('modal').style.display='block';
+};
+window.simpanTujuan = async id => {
+  await updateDoc(doc(db,'tujuan',id), {
+    nama:$('eTN').value.trim(), unit:$('eTU').value.trim(),
+    uangJalan:Number($('eTUJ').value)||0,
+    ubKarton:Number($('eTUBK').value)||0,
+    ubMobil:Number($('eTUBM').value)||0
+  });
+  tutupModal();
+};
+window.hapusTujuan = async id => {
+  if (confirm('Hapus tujuan ini?')) await deleteDoc(doc(db,'tujuan',id));
+};
+
+/* ===== DASHBOARD ===== */
+function renderDash(){
+  const now = new Date(), awal = new Date(now.getFullYear(), now.getMonth(), 1);
+  const ok = semuaData.filter(p=>p.status!=='ditolak');
+  const nunggu = semuaData.filter(p=>p.status==='menunggu');
+  const setujui = semuaData.filter(p=>p.status==='disetujui');
+  const bulan = ok.filter(p=>p.waktu?.toDate?.() >= awal);
+  const totD = a => a.reduce((s,p)=>s+(p.diterima||0),0);
+  const totB = a => a.reduce((s,p)=>s+(p.uangBongkar||0),0);
+  const m = {};
+  bulan.forEach(p=>{const k=p.nama||'?';m[k]=m[k]||{n:0,d:0,b:0};m[k].n++;m[k].d+=p.diterima||0;m[k].b+=p.uangBongkar||0;});
+  const rows = Object.entries(m).sort().map(([k,v])=>
+    `<tr><td>${esc(k)}</td><td>${v.n}</td><td>${rp(v.d)}</td><td>${rp(v.b)}</td></tr>`).join('');
+  $('dash').innerHTML = `
+    <div class="grid">
+      <div class="k kuning">⏳ Menunggu<b>${nunggu.length}</b><span>Total ${rp(totD(nunggu))}</span></div>
+      <div class="k hijau2">✅ Disetujui<b>${setujui.length}</b><span>${rp(totD(setujui))} + bongkar ${rp(totB(setujui))}</span></div>
+      <div class="k biru">📅 Bulan Ini<b>${bulan.length} trip</b><span>Diterima ${rp(totD(bulan))} • Bongkar ${rp(totB(bulan))}</span></div>
+      <div class="k abu3">👤 Supir<b>${daftarSupir.length}</b><span>terdaftar</span></div>
+    </div>
+    <div class="card"><h2>💰 Pengeluaran per Supir (bulan ini)</h2>
+      ${rows?`<table><tr><th>Supir</th><th>Trip</th><th>Diterima</th><th>Bongkar</th></tr>${rows}</table>`:'<div class="kecil">Belum ada.</div>'}
+    </div>
+    <button class="abu2" onclick="gantiPw()">🔑 Ganti Password Admin</button>`;
+}
+window.gantiPw = () => {
+  $('modalBody').innerHTML = `
+    <h2>🔑 Ganti Password Admin</h2>
+    <label>Password Lama</label><input id="gL" type="password">
+    <label>Password Baru</label><input id="gB" type="password">
+    <button onclick="simpanPw()">Simpan</button>
+    <button class="abu2" onclick="tutupModal()">Batal</button>`;
+  $('modal').style.display='block';
+};
+window.simpanPw = async () => {
+  const g = await getDoc(doc(db,'pengaturan','admin'));
+  if (await sha256($('gL').value) !== g.data().password) return alert('Password lama salah');
+  if ($('gB').value.length < 4) return alert('Minimal 4 karakter');
+  await setDoc(doc(db,'pengaturan','admin'), {password: await sha256($('gB').value)});
+  alert('✅ Password diganti'); tutupModal();
+};
+
+/* ===== SCANNER BARCODE ===== */
+let scanner = null;
+window.mulaiScan = async () => {
+  $('scanBox').style.display='block';
+  try {
+    scanner = new Html5Qrcode('reader');
+    await scanner.start({facingMode:'environment'}, {fps:10, qrbox:{width:250,height:120}},
+      teks => { $('fDN').value = teks; stopScan(); }, ()=>{});
+  } catch(e) {
+    alert('Kamera tidak bisa dibuka di sini. Isi manual, atau buka aplikasi lewat link https (setelah di-hosting).');
+    stopScan();
+  }
+};
+window.stopScan = () => {
+  if (scanner) { scanner.stop().catch(()=>{}); scanner=null; }
+  $('scanBox').style.display='none';
+};
+</script>
+</body>
+</html>
