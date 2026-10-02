@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supir - Pengajuan Uang</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+  body{background:#f0f2f5;max-width:520px;margin:auto;padding:12px 12px 80px}
+  h1{font-size:19px;color:#1a73e8;text-align:center;margin:10px 0}
+  h2{font-size:15px;margin-bottom:8px}
+  .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  label{display:block;font-size:12px;color:#555;margin:9px 0 3px;font-weight:bold}
+  input,select{width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+  button{padding:10px 14px;margin-top:8px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
+  .abu2{background:#888;font-size:12px;padding:7px 10px;margin:0}
+  .hijau{background:#34a853;margin:0}
+  .row{display:flex;gap:8px}.row input{flex:1}
+  .kecil{font-size:11px;color:#888;margin-top:3px}
+  .tebal{font-weight:bold}
+  .total{font-size:16px;font-weight:bold;color:#1a73e8;margin-top:10px}
+  .item{border-left:4px solid #fbbc04;padding:10px;background:#fafafa;border-radius:8px;margin-bottom:10px}
+  .item.disetujui{border-color:#34a853}.item.ditolak{border-color:#ea4335}
+  .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:#fbbc04}
+  .badge.disetujui{background:#34a853}.badge.ditolak{background:#ea4335}
+  .aksi{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .k{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .k b{display:block;font-size:20px;margin:4px 0}
+  .k span{font-size:11px;color:#666}
+  .kuning{border-top:4px solid #fbbc04}.hijau2{border-top:4px solid #34a853}.biru{border-top:4px solid #1a73e8}
+  .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .thumb{position:relative;width:70px;height:70px}
+  .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd;cursor:pointer}
+  .thumb span{position:absolute;top:-6px;right:-6px;background:#ea4335;color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:11px;cursor:pointer}
+  .tabs2{display:flex;gap:8px;margin-bottom:10px}
+  .tabs2 button{flex:1;margin:0;background:#fff;color:#555;border:1px solid #ddd}
+  .tabs2 button.aktif{background:#1a73e8;color:#fff;border-color:#1a73e8}
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;display:flex;border-top:1px solid #ddd;z-index:50}
+  .nav button{flex:1;background:none;border:none;padding:8px 2px;font-size:10px;color:#666;margin:0}
+  .nav button.aktif{color:#1a73e8;font-weight:bold}
+  .ic{display:block;font-size:20px}
+  #viewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
+  #viewer img{max-width:100%;max-height:90%}
+  #reader video{width:100%!important;border-radius:8px}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="card">
+    <div class="tabs2">
+      <button id="btMasuk" class="aktif" onclick="tabAuth('masuk')">Masuk</button>
+      <button id="btDaftar" onclick="tabAuth('daftar')">Daftar</button>
+    </div>
+    <div id="fMasuk">
+      <label>Nama</label><input id="lNama">
+      <label>Password</label><input id="lPw" type="password">
+      <button onclick="masuk()">Masuk</button>
+    </div>
+    <div id="fDaftar" style="display:none">
+      <label>Nama Lengkap</label><input id="dNama">
+      <label>No. Pol</label><input id="dNopol" placeholder="B 1234 ABC">
+      <label>Unit</label><input id="dUnit" list="dlUnit" placeholder="Tronton / CDD / Engkel">
+      <label>Password (buat sendiri)</label><input id="dPw" type="password">
+      <button onclick="daftar()">Daftar Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="dlUnit">
+  <option>Tronton</option><option>CDD</option><option>Engkel</option>
+  <option>Fuso</option><option>CDE</option>
+</datalist>
+
+<div id="app" style="display:none">
+<h1>🚚 Aplikasi Supir</h1>
+
+<div id="sdash">
+  <div class="card" id="profil"></div>
+  <div id="dashS"></div>
+  <div class="card"><h2>🕓 Pengajuan Saya</h2><div id="listS"></div></div>
+</div>
+
+<div id="sinput" style="display:none">
+<div class="card">
+  <h2>➕ Input Pengajuan</h2>
+  <label>Tujuan</label>
+  <select id="iTujuan" onchange="pilihTujuan()"><option value="">-- Pilih Tujuan --</option></select>
+  <label>Uang Jalan (Rp)</label><input id="iUJ" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>No. DN</label>
+  <div class="row">
+    <input id="iDN" placeholder="Scan barcode atau ketik manual">
+    <button class="abu2" style="padding:9px" onclick="mulaiScan()">📷 Scan</button>
+  </div>
+  <div class="kecil">Cadangan: <a href="https://www.prepostseo.com/id/scan-barcode-online" target="_blank">scan online</a> lalu paste</div>
+  <div id="scanBox" style="display:none;margin-top:8px">
+    <div id="reader"></div>
+    <button class="abu2" onclick="stopScan()">Tutup Scanner</button>
+  </div>
+  <label>Qty Karton</label><input id="iQty" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>UB / Karton (Rp)</label><input id="iUBK" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>UB / Mobil (Rp)</label><input id="iUBM" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="iBongkar" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>Yang Standby</label><input id="iStandby" placeholder="Nama / ket. yang standby">
+  <label>Uang Standby (Rp)</label><input id="iUS" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>Uang Kas Bon Muat</label><input id="iKB" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>Uang Tambahan (Rp)</label><input id="iT" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>Keterangan Uang Tambahan</label><input id="iKet">
+  <div class="total">Diterima: <span id="prevS">Rp 0</span></div>
+  <label>Foto Surat Jalan (maks 8)</label>
+  <input type="file" accept="image/*" multiple onchange="pilihFoto(event)">
+  <div id="prevFoto" class="thumbs"></div>
+  <button onclick="simpan()">💾 Kirim Pengajuan</button>
+</div>
+</div>
+
+<div id="stujuan" style="display:none">
+  <div class="card">
+    <h2>📍 Master Tujuan</h2>
+    <div class="kecil">Hanya admin yang bisa menambah/mengubah tujuan.</div>
+    <div id="listT" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="aktif" onclick="tab('sdash',this)"><span class="ic">🏠</span>Dashboard</button>
+  <button onclick="tab('sinput',this)"><span class="ic">➕</span>Input</button>
+  <button onclick="tab('stujuan',this)"><span class="ic">📍</span>Tujuan</button>
+  <button onclick="keluar()"><span class="ic">🚪</span>Keluar</button>
+</nav>
+</div>
+
+<div id="viewer" onclick="this.style.display='none'"><img id="viewerImg"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, collection, addDoc, doc, getDocs, onSnapshot, query, where, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAn9tbH8O36Tzzown4w5Ha0GAjkm_ihoPQ",
+  authDomain: "rahmat-smj.firebaseapp.com",
+  projectId: "rahmat-smj",
+  storageBucket: "rahmat-smj.firebasestorage.app",
+  messagingSenderId: "79729482328",
+  appId: "1:79729482328:web:c0d486608f531517e1482d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function hitungUB(qty, ubk, ubm){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ubk)||0);if(qty>=1000)return Number(ubm)||0;return 0;}
+
+let supirId = localStorage.getItem('supirId') || '', profil = null;
+let daftarTujuan = [], semuaS = [], fotoMap = {}, mulaiInit = false;
+
+/* ===== AUTH TAB ===== */
+window.tabAuth = m => {
+  $('fMasuk').style.display = m==='masuk' ? 'block':'none';
+  $('fDaftar').style.display = m==='daftar' ? 'block':'none';
+  $('btMasuk').classList.toggle('aktif', m==='masuk');
+  $('btDaftar').classList.toggle('aktif', m==='daftar');
+};
+
+/* ===== DAFTAR ===== */
+window.daftar = async () => {
+  const nama=$('dNama').value.trim(), noPol=$('dNopol').value.trim(),
+        unit=$('dUnit').value.trim(), pw=$('dPw').value;
+  if (!nama || !noPol || !unit || !pw) return alert('Semua data wajib diisi!');
+  if (pw.length < 4) return alert('Password minimal 4 karakter!');
+  const cek = await getDocs(query(collection(db,'supir'), where('nama','==',nama)));
+  if (!cek.empty) return alert('Nama sudah terdaftar! Gunakan menu Masuk.');
+  const ref = await addDoc(collection(db,'supir'), {
+    nama, noPol, unit, password: await sha256(pw), sumber:'supir', dibuat:serverTimestamp()
+  });
+  supirId = ref.id; profil = {nama, noPol, unit};
+  localStorage.setItem('supirId', supirId);
+  alert('✅ Pendaftaran berhasil, langsung bisa dipakai!');
+  initS();
+};
+
+/* ===== MASUK ===== */
+window.masuk = async () => {
+  const nama=$('lNama').value.trim(), pw=$('lPw').value;
+  if (!nama || !pw) return alert('Isi nama dan password!');
+  const s = await getDocs(query(collection(db,'supir'), where('nama','==',nama)));
+  if (s.empty) return alert('Nama tidak terdaftar. Daftar dulu!');
+  const d = s.docs[0];
+  if (await sha256(pw) !== d.data().password) return alert('Password salah!');
+  supirId = d.id; profil = d.data();
+  localStorage.setItem('supirId', supirId);
+  initS();
+};
+window.keluar = () => { localStorage.removeItem('supirId'); location.reload(); };
+
+if (supirId) getProfil();
+async function getProfil(){
+  const all = await getDocs(collection(db,'supir'));
+  const d = all.docs.find(x=>x.id===supirId);
+  if (d) { profil = d.data(); initS(); }
+  else localStorage.removeItem('supirId');
+}
+
+/* ===== INIT APLIKASI ===== */
+function initS(){
+  $('gate').style.display='none'; $('app').style.display='block';
+  if (mulaiInit) return; mulaiInit = true;
+  $('profil').innerHTML = `<div class="tebal">👤 ${esc(profil.nama)}</div>
+    <div class="kecil">🚚 ${esc(profil.noPol)} • ${esc(profil.unit)}</div>`;
+  onSnapshot(collection(db,'tujuan'), s => {
+    daftarTujuan=[]; s.forEach(d=>daftarTujuan.push({id:d.id,...d.data()}));
+    isiTujuan(); renderListT();
+  });
+  onSnapshot(query(collection(db,'pengajuan'), where('supirId','==',supirId)), s => {
+    semuaS=[]; s.forEach(d=>semuaS.push({id:d.id,...d.data()}));
+    semuaS.sort((a,b)=>(b.waktu?.seconds||0)-(a.waktu?.seconds||0));
+    renderDashS(); renderListS();
+  });
+  onSnapshot(collection(db,'foto'), s => {
+    fotoMap={}; s.forEach(d=>{const f=d.data();(fotoMap[f.pid]=fotoMap[f.pid]||[]).push({id:d.id,...f});});
+    renderListS();
+  });
+}
+
+/* ===== NAVIGASI ===== */
+window.tab = (n, btn) => {
+  ['sdash','sinput','stujuan'].forEach(x => $(x).style.display = x===n ? 'block':'none');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('aktif'));
+  btn.classList.add('aktif');
+};
+
+/* ===== TUJUAN ===== */
+function isiTujuan(){
+  const u = (profil.unit||'').toLowerCase();
+  const arr = [...daftarTujuan].sort((a,b)=>
+    ((a.unit?.toLowerCase()===u?0:1)-(b.unit?.toLowerCase()===u?0:1)) || a.nama.localeCompare(b.nama));
+  $('iTujuan').innerHTML = '<option value="">-- Pilih Tujuan --</option>' +
+    arr.map(t=>`<option value="${t.id}">${esc(t.nama)} — ${esc(t.unit)} (UJ ${rp(t.uangJalan)})</option>`).join('');
+}
+function renderListT(){
+  $('listT').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>`
+    <div class="item" style="border-color:#1a73e8">
+      <div class="tebal">${esc(t.nama)} — ${esc(t.unit)}</div>
+      <div class="kecil">UJ: ${rp(t.uangJalan)} • UB karton: ${rp(t.ubKarton)} • UB mobil: ${rp(t.ubMobil)}</div>
+    </div>`).join('') : 'Belum ada tujuan.';
+}
+window.pilihTujuan = () => {
+  const t = daftarTujuan.find(x=>x.id===$('iTujuan').value);
+  if (!t) return;
+  $('iUJ').value = t.uangJalan||0;
+  $('iUBK').value = t.ubKarton||0;
+  $('iUBM').value = t.ubMobil||0;
+  rehitungS();
+};
+window.rehitungS = () => {
+  $('iBongkar').value = hitungUB($('iQty').value,$('iUBK').value,$('iUBM').value);
+  $('prevS').textContent = rp(
+    (Number($('iUJ').value)||0)-(Number($('iKB').value)||0)
+    +(Number($('iUS').value)||0)+(Number($('iT').value)||0));
+};
+
+/* ===== FOTO ===== */
+let fileFoto = [];
+function kompres(file){return new Promise(res=>{
+  const r=new FileReader();
+  r.onload=()=>{const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;const mw=1000;
+      if(w>mw){h=h*mw/w;w=mw;}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      let out=c.toDataURL('image/jpeg',0.5);
+      if(out.length>300000){w=700;h=img.height*700/img.width;
+        const c2=document.createElement('canvas');c2.width=w;c2.height=h;
+        c2.getContext('2d').drawImage(img,0,0,w,h);out=c2.toDataURL('image/jpeg',0.4);}
+      res(out);};
+    img.src=r.result;};
+  r.readAsDataURL(file);});}
+window.pilihFoto = async e => {
+  for (const f of e.target.files) {
+    if (fileFoto.length >= 8) { alert('Maksimal 8 foto'); break; }
+    fileFoto.push(await kompres(f));
+  }
+  e.target.value=''; renderFoto();
+};
+function renderFoto(){ $('prevFoto').innerHTML = fileFoto.map((d,i)=>
+  `<div class="thumb"><img src="${d}"><span onclick="hapusFoto(${i})">✕</span></div>`).join(''); }
+window.hapusFoto = i => { fileFoto.splice(i,1); renderFoto(); };
+
+/* ===== KIRIM PENGAJUAN ===== */
+window.simpan = async () => {
+  const t = daftarTujuan.find(x=>x.id===$('iTujuan').value);
+  if (!t) return alert('Pilih tujuan dulu!');
+  const uj=Number($('iUJ').value)||0, kb=Number($('iKB').value)||0,
+        us=Number($('iUS').value)||0, tb=Number($('iT').value)||0;
+  const data = {
+    supirId, nama:profil.nama, noPol:profil.noPol, unit:profil.unit,
+    tujuanId:t.id, tujuan:t.nama+' - '+t.unit, unitTujuan:t.unit,
+    uangJalan:uj, ubKarton:Number($('iUBK').value)||0, ubMobil:Number($('iUBM').value)||0,
+    qty:Number($('iQty').value)||0, uangBongkar:Number($('iBongkar').value)||0,
+    noDN:$('iDN').value.trim(), yangStandby:$('iStandby').value.trim(), uangStandby:us,
+    kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim(),
+    diterima: uj-kb+us+tb, status:'menunggu', sumber:'supir', waktu:serverTimestamp()
+  };
+  try {
+    const ref = await addDoc(collection(db,'pengajuan'), data);
+    for (const f of fileFoto) await addDoc(collection(db,'foto'), {pid:ref.id, data:f});
+    alert('✅ Pengajuan terkirim! Tunggu persetujuan admin.');
+    ['iDN','iQty','iBongkar','iStandby','iUS','iKB','iT','iKet','iUJ','iUBK','iUBM']
+      .forEach(x=>$(x).value='');
+    $('iTujuan').value=''; fileFoto=[]; renderFoto(); $('prevS').textContent='Rp 0'; isiTujuan();
+  } catch(err){ alert('Gagal: '+err.message); }
+};
+
+/* ===== DASHBOARD & DAFTAR ===== */
+function renderDashS(){
+  const now = new Date(), awal = new Date(now.getFullYear(), now.getMonth(), 1);
+  const ok = semuaS.filter(p=>p.status!=='ditolak');
+  const nunggu = semuaS.filter(p=>p.status==='menunggu');
+  const setujui = semuaS.filter(p=>p.status==='disetujui');
+  const bulan = ok.filter(p=>p.waktu?.toDate?.() >= awal);
+  const totD = a => a.reduce((s,p)=>s+(p.diterima||0),0);
+  $('dashS').innerHTML = `
+    <div class="grid">
+      <div class="k kuning">⏳ Menunggu<b>${nunggu.length}</b><span>${rp(totD(nunggu))}</span></div>
+      <div class="k hijau2">✅ Disetujui<b>${setujui.length}</b><span>${rp(totD(setujui))}</span></div>
+      <div class="k biru" style="grid-column:1/-1">📅 Bulan Ini<b>${bulan.length} trip</b><span>Total diterima: ${rp(totD(bulan))}</span></div>
+    </div>`;
+}
+function renderListS(){
+  $('listS').innerHTML = semuaS.length ? semuaS.map(itemS).join('') : 'Belum ada pengajuan.';
+}
+function itemS(p){
+  const tgl = p.waktu?.toDate?.()?.toLocaleString('id-ID') ?? '...';
+  const thumbs = (fotoMap[p.id]||[]).map(f=>`<img class="ft" src="${f.data}" onclick="lihat('${f.id}')">`).join('');
+  return `<div class="item ${p.status}">
+    <span class="badge ${p.status}">${(p.status||'').toUpperCase()}</span>
+    <div class="tebal">📍 ${esc(p.tujuan)}</div>
+    <div class="kecil">No. DN: ${esc(p.noDN)||'-'} • Qty: ${p.qty||0} karton</div>
+    <div class="kecil">Uang Jalan: ${rp(p.uangJalan)} • Bongkar: ${rp(p.uangBongkar)}</div>
+    <div class="kecil">Kas Bon: -${rp(p.kasBon)} • Standby: ${rp(p.uangStandby)} • Tambahan: ${rp(p.uangTambahan)}</div>
+    <div class="tebal" style="color:#1a73e8">Diterima: ${rp(p.diterima)}</div>
+    <div class="thumbs">${thumbs}</div>
+    <div class="kecil">${tgl}</div>
+    <div class="aksi"><button class="hijau" onclick="kirimWA('${p.id}')">💬 Kirim via WhatsApp</button></div>
+  </div>`;
+}
+window.lihat = id => {
+  const f = Object.values(fotoMap).flat().find(x=>x.id===id);
+  if (!f) return;
+  $('viewerImg').src = f.data; $('viewer').style.display='flex';
+};
+window.kirimWA = id => {
+  const p = semuaS.find(x=>x.id===id); if (!p) return;
+  const txt = `*PENGAJUAN UANG*
+👤 ${p.nama}
+🚚 ${p.noPol} (${p.unit})
+📍 ${p.tujuan}
+🧾 No. DN: ${p.noDN||'-'}
+📦 Qty: ${p.qty||0} karton
+----------------------
+Uang Jalan: ${rp(p.uangJalan)}
+Kas Bon Muat: -${rp(p.kasBon)}
+Uang Standby: ${rp(p.uangStandby)}
+Uang Tambahan: ${rp(p.uangTambahan)}
+Uang Bongkar: ${rp(p.uangBongkar)}
+*DITERIMA: ${rp(p.diterima)}*`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt), '_blank');
+};
+
+/* ===== SCANNER BARCODE ===== */
+let scanner = null;
+window.mulaiScan = async () => {
+  $('scanBox').style.display='block';
+  try {
+    scanner = new Html5Qrcode('reader');
+    await scanner.start({facingMode:'environment'}, {fps:10, qrbox:{width:250,height:120}},
+      teks => { $('iDN').value = teks; stopScan(); }, ()=>{});
+  } catch(e) {
+    alert('Kamera tidak bisa dibuka di sini. Isi manual, atau buka aplikasi lewat link https (setelah di-hosting).');
+    stopScan();
+  }
+};
+window.stopScan = () => {
+  if (scanner) { scanner.stop().catch(()=>{}); scanner=null; }
+  $('scanBox').style.display='none';
+};
+</script>
+</body>
+</html>
