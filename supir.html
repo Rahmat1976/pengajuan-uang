@@ -131,7 +131,12 @@
   <label>Keterangan Uang Tambahan</label><input id="iKet">
   <div class="total">Diterima: <span id="prevS">Rp 0</span></div>
   <label>Foto Surat Jalan (maks 8)</label>
-  <input type="file" accept="image/*" multiple onchange="pilihFoto(event)">
+  <div class="row">
+    <input type="file" accept="image/*" capture="environment" onchange="pilihFoto(event)" id="camInput" style="display:none">
+    <button type="button" class="abu2" style="flex:1;padding:11px" onclick="document.getElementById('camInput').click()">📷 Kamera</button>
+    <input type="file" accept="image/*" multiple onchange="pilihFoto(event)" id="galInput" style="display:none">
+    <button type="button" class="abu2" style="flex:1;padding:11px" onclick="document.getElementById('galInput').click()">🖼 Galeri</button>
+  </div>
   <div id="prevFoto" class="thumbs"></div>
   <button onclick="simpan()">💾 Kirim Pengajuan</button>
 </div>
