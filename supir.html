@@ -30,6 +30,8 @@
   .k b{display:block;font-size:20px;margin:4px 0}
   .k span{font-size:11px;color:#666}
   .kuning{border-top:4px solid #fbbc04}.hijau2{border-top:4px solid #34a853}.biru{border-top:4px solid #1a73e8}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+  td,th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}th{color:#888}
   .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .thumb{position:relative;width:70px;height:70px}
   .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd;cursor:pointer}
@@ -62,7 +64,7 @@
     <div id="fDaftar" style="display:none">
       <label>Nama Lengkap</label><input id="dNama">
       <label>No. Pol</label><input id="dNopol" placeholder="B 1234 ABC">
-      <label>Unit</label><input id="dUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CFD / CDE">
+      <label>Unit</label><input id="dUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CDD / CDE">
       <label>Password (buat sendiri)</label><input id="dPw" type="password">
       <button onclick="daftar()">Daftar Sekarang</button>
     </div>
@@ -70,7 +72,7 @@
 </div>
 
 <datalist id="dlUnit">
-  <option>Wing Box</option><option>Fuso Long</option><option>CFD</option>
+  <option>Wing Box</option><option>Fuso Long</option><option>CDD</option>
   <option>CDE</option>
 </datalist>
 
@@ -88,6 +90,7 @@
   <h2>➕ Input Pengajuan</h2>
   <label>Tujuan</label>
   <select id="iTujuan" onchange="pilihTujuan()"><option value="">-- Pilih Tujuan --</option></select>
+  <div class="kecil">UJ &amp; UB otomatis sesuai unit kamu (${''}</div>
   <label>Uang Jalan (Rp)</label><input id="iUJ" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>No. DN</label>
   <div class="row">
@@ -101,8 +104,8 @@
   </div>
   <label>Qty Karton</label><input id="iQty" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>UB / Karton (Rp)</label><input id="iUBK" type="number" inputmode="numeric" oninput="rehitungS()">
-  <label>UB / Mobil (Rp)</label><input id="iUBM" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="iBongkar" type="number" inputmode="numeric" oninput="rehitungS()">
+  <div class="kecil">Otomatis: qty &lt; 1000 → qty × UB • qty ≥ 1000 → UB × 1000</div>
   <label>Yang Standby</label><input id="iStandby" placeholder="Nama / ket. yang standby">
   <label>Uang Standby (Rp)</label><input id="iUS" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Kas Bon Muat</label><input id="iKB" type="number" inputmode="numeric" oninput="rehitungS()">
@@ -154,7 +157,7 @@ const $ = id => document.getElementById(id);
 const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function hitungUB(qty, ubk, ubm){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ubk)||0);if(qty>=1000)return Number(ubm)||0;return 0;}
+function hitungUB(qty, ub, ubFlat){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ub)||0);if(qty>=1000)return Number(ubFlat)||0;return 0;}
 
 let supirId = localStorage.getItem('supirId') || '', profil = null;
 let daftarTujuan = [], semuaS = [], fotoMap = {}, mulaiInit = false;
@@ -214,6 +217,7 @@ function initS(){
     <div class="kecil">🚚 ${esc(profil.noPol)} • ${esc(profil.unit)}</div>`;
   onSnapshot(collection(db,'tujuan'), s => {
     daftarTujuan=[]; s.forEach(d=>daftarTujuan.push({id:d.id,...d.data()}));
+    daftarTujuan.sort((a,b)=>a.nama.localeCompare(b.nama));
     isiTujuan(); renderListT();
   });
   onSnapshot(query(collection(db,'pengajuan'), where('supirId','==',supirId)), s => {
@@ -236,29 +240,36 @@ window.tab = (n, btn) => {
 
 /* ===== TUJUAN ===== */
 function isiTujuan(){
-  const u = (profil.unit||'').toLowerCase();
-  const arr = [...daftarTujuan].sort((a,b)=>
-    ((a.unit?.toLowerCase()===u?0:1)-(b.unit?.toLowerCase()===u?0:1)) || a.nama.localeCompare(b.nama));
   $('iTujuan').innerHTML = '<option value="">-- Pilih Tujuan --</option>' +
-    arr.map(t=>`<option value="${t.id}">${esc(t.nama)} — ${esc(t.unit)} (UJ ${rp(t.uangJalan)})</option>`).join('');
+    daftarTujuan.map(t=>`<option value="${t.id}">${esc(t.nama)}</option>`).join('');
 }
 function renderListT(){
-  $('listT').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>`
-    <div class="item" style="border-color:#1a73e8">
-      <div class="tebal">${esc(t.nama)} — ${esc(t.unit)}</div>
-      <div class="kecil">UJ: ${rp(t.uangJalan)} • UB karton: ${rp(t.ubKarton)} • UB mobil: ${rp(t.ubMobil)}</div>
-    </div>`).join('') : 'Belum ada tujuan.';
+  $('listT').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>{
+    const rows = (t.tarif||[]).map(x=>
+      `<tr><td>${esc(x.unit)}</td><td>${rp(x.uj)}</td><td>${rp(x.ub)}/ktn</td></tr>`).join('');
+    return `<div class="item" style="border-color:#1a73e8">
+      <div class="tebal">📍 ${esc(t.nama)}</div>
+      ${rows?`<table><tr><th>Unit</th><th>UJ</th><th>UB</th></tr>${rows}</table>`:'<div class="kecil">Belum ada tarif.</div>'}
+    </div>`;
+  }).join('') : 'Belum ada tujuan.';
 }
 window.pilihTujuan = () => {
   const t = daftarTujuan.find(x=>x.id===$('iTujuan').value);
   if (!t) return;
-  $('iUJ').value = t.uangJalan||0;
-  $('iUBK').value = t.ubKarton||0;
-  $('iUBM').value = t.ubMobil||0;
+  const u = (profil.unit||'').toLowerCase();
+  const tr = (t.tarif||[]).find(x=>(x.unit||'').toLowerCase()===u);
+  if (!tr) {
+    alert('⚠️ Tujuan "'+t.nama+'" belum punya tarif untuk unit kamu ('+profil.unit+').\nHubungi admin.');
+    $('iUJ').value=0; $('iUBK').value=0;
+  } else {
+    $('iUJ').value = tr.uj||0;
+    $('iUBK').value = tr.ub||0;
+  }
   rehitungS();
 };
 window.rehitungS = () => {
-  $('iBongkar').value = hitungUB($('iQty').value,$('iUBK').value,$('iUBM').value);
+  const ub = Number($('iUBK').value)||0;
+  $('iBongkar').value = hitungUB($('iQty').value, ub, ub*1000);
   $('prevS').textContent = rp(
     (Number($('iUJ').value)||0)-(Number($('iKB').value)||0)
     +(Number($('iUS').value)||0)+(Number($('iT').value)||0));
@@ -298,10 +309,11 @@ window.simpan = async () => {
   if (!t) return alert('Pilih tujuan dulu!');
   const uj=Number($('iUJ').value)||0, kb=Number($('iKB').value)||0,
         us=Number($('iUS').value)||0, tb=Number($('iT').value)||0;
+  const ub = Number($('iUBK').value)||0;
   const data = {
     supirId, nama:profil.nama, noPol:profil.noPol, unit:profil.unit,
-    tujuanId:t.id, tujuan:t.nama+' - '+t.unit, unitTujuan:t.unit,
-    uangJalan:uj, ubKarton:Number($('iUBK').value)||0, ubMobil:Number($('iUBM').value)||0,
+    tujuanId:t.id, tujuan:t.nama,
+    uangJalan:uj, ubKarton:ub, ubMobil:ub*1000,
     qty:Number($('iQty').value)||0, uangBongkar:Number($('iBongkar').value)||0,
     noDN:$('iDN').value.trim(), yangStandby:$('iStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim(),
@@ -311,9 +323,9 @@ window.simpan = async () => {
     const ref = await addDoc(collection(db,'pengajuan'), data);
     for (const f of fileFoto) await addDoc(collection(db,'foto'), {pid:ref.id, data:f});
     alert('✅ Pengajuan terkirim! Tunggu persetujuan admin.');
-    ['iDN','iQty','iBongkar','iStandby','iUS','iKB','iT','iKet','iUJ','iUBK','iUBM']
+    ['iDN','iQty','iBongkar','iStandby','iUS','iKB','iT','iKet','iUJ','iUBK']
       .forEach(x=>$(x).value='');
-    $('iTujuan').value=''; fileFoto=[]; renderFoto(); $('prevS').textContent='Rp 0'; isiTujuan();
+    $('iTujuan').value=''; fileFoto=[]; renderFoto(); $('prevS').textContent='Rp 0';
   } catch(err){ alert('Gagal: '+err.message); }
 };
 
@@ -382,7 +394,7 @@ window.mulaiScan = async () => {
     await scanner.start({facingMode:'environment'}, {fps:10, qrbox:{width:250,height:120}},
       teks => { $('iDN').value = teks; stopScan(); }, ()=>{});
   } catch(e) {
-    alert('Kamera tidak bisa dibuka di sini. Isi manual, atau buka aplikasi lewat link https (setelah di-hosting).');
+    alert('Kamera tidak bisa dibuka di sini. Isi manual.');
     stopScan();
   }
 };
