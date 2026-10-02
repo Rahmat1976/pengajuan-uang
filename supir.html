@@ -6,49 +6,67 @@
 <title>Supir - Pengajuan Uang</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
+  :root{
+    --bg:#eef1f6;--card:#ffffff;--tx:#101a2c;--sub:#5b6b82;--line:#e3e8f0;
+    --inp:#ffffff;--acc:#16325c;--accSoft:#e9effb;--gold:#a97b1f;
+    --btn1:#16325c;--btn2:#2a4f96;--btnTx:#ffffff;--accTx:#ffffff;
+    --mut:#64748b;--ok:#169a52;--bad:#d92d20;--warn:#b45309;
+    --shadow:0 2px 12px rgba(16,26,44,.08);
+  }
+  body.gelap{
+    --bg:#090e1a;--card:#121a2e;--tx:#eaeff9;--sub:#93a4c3;--line:#22304e;
+    --inp:#0d1425;--acc:#e8c15a;--accSoft:#1a2440;--gold:#e8c15a;
+    --btn1:#e8c15a;--btn2:#c39a33;--btnTx:#141a28;--accTx:#141a28;
+    --mut:#4b5b76;--ok:#2ecc8f;--bad:#ff6b5e;--warn:#f0b429;
+    --shadow:0 2px 14px rgba(0,0,0,.5);
+  }
   *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
-  body{background:#f0f2f5;max-width:520px;margin:auto;padding:12px 12px 80px}
-  h1{font-size:19px;color:#1a73e8;text-align:center;margin:10px 0}
+  body{background:var(--bg);color:var(--tx);max-width:520px;margin:auto;padding:12px 12px 80px;transition:background .3s,color .3s}
+  h1{font-size:18px;color:var(--acc);text-align:center;margin:10px 0;letter-spacing:.5px}
   h2{font-size:15px;margin-bottom:8px}
-  .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  label{display:block;font-size:12px;color:#555;margin:9px 0 3px;font-weight:bold}
-  input,select{width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-  button{padding:10px 14px;margin-top:8px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
-  .abu2{background:#888;font-size:12px;padding:7px 10px;margin:0}
-  .hijau{background:#34a853;margin:0}
+  .card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  label{display:block;font-size:12px;color:var(--sub);margin:9px 0 3px;font-weight:bold}
+  input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--inp);color:var(--tx)}
+  button{padding:11px 14px;margin-top:8px;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:var(--btnTx);border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer}
+  .abu2{background:var(--mut);color:#fff;font-size:12px;padding:8px 10px;margin:0}
+  .hijau{background:var(--ok);color:#fff;margin:0}
   .row{display:flex;gap:8px}.row input{flex:1}
-  .kecil{font-size:11px;color:#888;margin-top:3px}
+  .kecil{font-size:11px;color:var(--sub);margin-top:3px}
   .tebal{font-weight:bold}
-  .total{font-size:16px;font-weight:bold;color:#1a73e8;margin-top:10px}
-  .item{border-left:4px solid #fbbc04;padding:10px;background:#fafafa;border-radius:8px;margin-bottom:10px}
-  .item.disetujui{border-color:#34a853}.item.ditolak{border-color:#ea4335}
-  .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:#fbbc04}
-  .badge.disetujui{background:#34a853}.badge.ditolak{background:#ea4335}
+  .total{font-size:16px;font-weight:bold;color:var(--acc);margin-top:10px}
+  .item{border-left:4px solid var(--warn);padding:10px;background:var(--accSoft);border-radius:10px;margin-bottom:10px}
+  .item.disetujui{border-color:var(--ok)}.item.ditolak{border-color:var(--bad)}
+  .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:var(--warn)}
+  .badge.disetujui{background:var(--ok)}.badge.ditolak{background:var(--bad)}
   .aksi{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-  .k{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  .k b{display:block;font-size:20px;margin:4px 0}
-  .k span{font-size:11px;color:#666}
-  .kuning{border-top:4px solid #fbbc04}.hijau2{border-top:4px solid #34a853}.biru{border-top:4px solid #1a73e8}
+  .k{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow)}
+  .k b{display:block;font-size:20px;margin:4px 0;color:var(--acc)}
+  .k span{font-size:11px;color:var(--sub)}
+  .kuning{border-top:4px solid var(--warn)}.hijau2{border-top:4px solid var(--ok)}.biru{border-top:4px solid var(--acc)}
   table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-  td,th{border-bottom:1px solid #eee;padding:6px 4px;text-align:left}th{color:#888}
+  td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}th{color:var(--sub)}
   .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .thumb{position:relative;width:70px;height:70px}
-  .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #ddd;cursor:pointer}
-  .thumb span{position:absolute;top:-6px;right:-6px;background:#ea4335;color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:11px;cursor:pointer}
+  .thumb img,.ft{width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+  .thumb span{position:absolute;top:-6px;right:-6px;background:var(--bad);color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:11px;cursor:pointer}
   .tabs2{display:flex;gap:8px;margin-bottom:10px}
-  .tabs2 button{flex:1;margin:0;background:#fff;color:#555;border:1px solid #ddd}
-  .tabs2 button.aktif{background:#1a73e8;color:#fff;border-color:#1a73e8}
-  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;display:flex;border-top:1px solid #ddd;z-index:50}
-  .nav button{flex:1;background:none;border:none;padding:8px 2px;font-size:10px;color:#666;margin:0}
-  .nav button.aktif{color:#1a73e8;font-weight:bold}
+  .tabs2 button{flex:1;margin:0;background:var(--card);color:var(--sub);border:1px solid var(--line)}
+  .tabs2 button.aktif{background:var(--acc);color:var(--accTx);border-color:var(--acc)}
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:var(--card);display:flex;border-top:1px solid var(--line);z-index:50;box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+  .nav button{flex:1;background:none;border:none;padding:8px 2px;font-size:10px;color:var(--sub);margin:0}
+  .nav button.aktif{color:var(--acc);font-weight:bold}
   .ic{display:block;font-size:20px}
+  .tema{position:fixed;top:10px;right:10px;z-index:70;width:40px;height:40px;padding:0;margin:0;border-radius:50%;background:var(--card);color:var(--tx);border:1px solid var(--line);box-shadow:var(--shadow);font-size:18px}
   #viewer{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center}
   #viewer img{max-width:100%;max-height:90%}
   #reader video{width:100%!important;border-radius:8px}
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem('tema')==='gelap')document.body.classList.add('gelap')}catch(e){}</script>
+
+<button class="tema" id="btnTema" onclick="toggleTema()">🌙</button>
 
 <div id="gate">
   <div class="card">
@@ -77,7 +95,7 @@
 </datalist>
 
 <div id="app" style="display:none">
-<h1>🚚 Aplikasi Supir</h1>
+<h1>🚚 APLIKASI SUPIR</h1>
 
 <div id="sdash">
   <div class="card" id="profil"></div>
@@ -90,7 +108,7 @@
   <h2>➕ Input Pengajuan</h2>
   <label>Tujuan</label>
   <select id="iTujuan" onchange="pilihTujuan()"><option value="">-- Pilih Tujuan --</option></select>
-  <div class="kecil">UJ &amp; UB otomatis sesuai unit kamu (${''}</div>
+  <div class="kecil">UJ &amp; UB otomatis sesuai unit kamu.</div>
   <label>Uang Jalan (Rp)</label><input id="iUJ" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>No. DN</label>
   <div class="row">
@@ -139,7 +157,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, getDocs, onSnapshot, query, where, serverTimestamp }
+import { getFirestore, collection, addDoc, doc, getDocs, deleteDoc, onSnapshot, query, where, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -161,6 +179,18 @@ function hitungUB(qty, ub, ubFlat){qty=Number(qty)||0;if(qty>0&&qty<1000)return 
 
 let supirId = localStorage.getItem('supirId') || '', profil = null;
 let daftarTujuan = [], semuaS = [], fotoMap = {}, mulaiInit = false;
+
+/* ===== TEMA SIANG/MALAM ===== */
+function terapTema(){
+  const g = document.body.classList.contains('gelap');
+  $('btnTema').textContent = g ? '☀️' : '🌙';
+}
+window.toggleTema = () => {
+  document.body.classList.toggle('gelap');
+  localStorage.setItem('tema', document.body.classList.contains('gelap')?'gelap':'terang');
+  terapTema();
+};
+terapTema();
 
 /* ===== AUTH TAB ===== */
 window.tabAuth = m => {
@@ -238,6 +268,18 @@ window.tab = (n, btn) => {
   btn.classList.add('aktif');
 };
 
+/* ===== RESET RIWAYAT SAYA ===== */
+window.resetSaya = async () => {
+  const target = semuaS.filter(p=>p.status!=='menunggu');
+  if (!target.length) return alert('Tidak ada riwayat selesai untuk direset.');
+  if (!confirm('Reset '+target.length+' riwayat kamu (disetujui/ditolak)?\n\n⚠️ Pengajuan yang masih MENUNGGU tidak akan terhapus.')) return;
+  for (const p of target) {
+    for (const f of (fotoMap[p.id]||[])) await deleteDoc(doc(db,'foto',f.id));
+    await deleteDoc(doc(db,'pengajuan',p.id));
+  }
+  alert('✅ '+target.length+' riwayat telah direset.');
+};
+
 /* ===== TUJUAN ===== */
 function isiTujuan(){
   $('iTujuan').innerHTML = '<option value="">-- Pilih Tujuan --</option>' +
@@ -247,7 +289,7 @@ function renderListT(){
   $('listT').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>{
     const rows = (t.tarif||[]).map(x=>
       `<tr><td>${esc(x.unit)}</td><td>${rp(x.uj)}</td><td>${rp(x.ub)}/ktn</td></tr>`).join('');
-    return `<div class="item" style="border-color:#1a73e8">
+    return `<div class="item" style="border-color:var(--acc)">
       <div class="tebal">📍 ${esc(t.nama)}</div>
       ${rows?`<table><tr><th>Unit</th><th>UJ</th><th>UB</th></tr>${rows}</table>`:'<div class="kecil">Belum ada tarif.</div>'}
     </div>`;
@@ -335,6 +377,7 @@ function renderDashS(){
   const ok = semuaS.filter(p=>p.status!=='ditolak');
   const nunggu = semuaS.filter(p=>p.status==='menunggu');
   const setujui = semuaS.filter(p=>p.status==='disetujui');
+  const selesai = semuaS.filter(p=>p.status!=='menunggu');
   const bulan = ok.filter(p=>p.waktu?.toDate?.() >= awal);
   const totD = a => a.reduce((s,p)=>s+(p.diterima||0),0);
   $('dashS').innerHTML = `
@@ -342,7 +385,9 @@ function renderDashS(){
       <div class="k kuning">⏳ Menunggu<b>${nunggu.length}</b><span>${rp(totD(nunggu))}</span></div>
       <div class="k hijau2">✅ Disetujui<b>${setujui.length}</b><span>${rp(totD(setujui))}</span></div>
       <div class="k biru" style="grid-column:1/-1">📅 Bulan Ini<b>${bulan.length} trip</b><span>Total diterima: ${rp(totD(bulan))}</span></div>
-    </div>`;
+    </div>
+    <button style="width:100%;background:var(--bad);color:#fff" onclick="resetSaya()">🗑 Reset Riwayat Selesai (${selesai.length})</button>
+    <div class="kecil" style="text-align:center;margin-top:5px">Hapus riwayat disetujui/ditolak. Yang menunggu tetap aman.</div>`;
 }
 function renderListS(){
   $('listS').innerHTML = semuaS.length ? semuaS.map(itemS).join('') : 'Belum ada pengajuan.';
@@ -356,7 +401,7 @@ function itemS(p){
     <div class="kecil">No. DN: ${esc(p.noDN)||'-'} • Qty: ${p.qty||0} karton</div>
     <div class="kecil">Uang Jalan: ${rp(p.uangJalan)} • Bongkar: ${rp(p.uangBongkar)}</div>
     <div class="kecil">Kas Bon: -${rp(p.kasBon)} • Standby: ${rp(p.uangStandby)} • Tambahan: ${rp(p.uangTambahan)}</div>
-    <div class="tebal" style="color:#1a73e8">Diterima: ${rp(p.diterima)}</div>
+    <div class="tebal" style="color:var(--acc)">Diterima: ${rp(p.diterima)}</div>
     <div class="thumbs">${thumbs}</div>
     <div class="kecil">${tgl}</div>
     <div class="aksi"><button class="hijau" onclick="kirimWA('${p.id}')">💬 Kirim via WhatsApp</button></div>
