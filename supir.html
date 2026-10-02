@@ -62,7 +62,7 @@
     <div id="fDaftar" style="display:none">
       <label>Nama Lengkap</label><input id="dNama">
       <label>No. Pol</label><input id="dNopol" placeholder="B 1234 ABC">
-      <label>Unit</label><input id="dUnit" list="dlUnit" placeholder="Tronton / CDD / Engkel">
+      <label>Unit</label><input id="dUnit" list="dlUnit" placeholder="Wing Box / Fuso Long / CFD / CDE">
       <label>Password (buat sendiri)</label><input id="dPw" type="password">
       <button onclick="daftar()">Daftar Sekarang</button>
     </div>
@@ -70,8 +70,8 @@
 </div>
 
 <datalist id="dlUnit">
-  <option>Tronton</option><option>CDD</option><option>Engkel</option>
-  <option>Fuso</option><option>CDE</option>
+  <option>Wing Box</option><option>Fuso Long</option><option>CFD</option>
+  <option>CDE</option>
 </datalist>
 
 <div id="app" style="display:none">
@@ -91,7 +91,7 @@
   <label>Uang Jalan (Rp)</label><input id="iUJ" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>No. DN</label>
   <div class="row">
-    <input id="iDN" placeholder="Scan barcode atau ketik manual">
+    <input id="iDN" placeholder="Scan barcode surat jalan / DN">
     <button class="abu2" style="padding:9px" onclick="mulaiScan()">📷 Scan</button>
   </div>
   <div class="kecil">Cadangan: <a href="https://www.prepostseo.com/id/scan-barcode-online" target="_blank">scan online</a> lalu paste</div>
