@@ -130,6 +130,7 @@
   <label>Uang Tambahan (Rp)</label><input id="iT" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Keterangan Uang Tambahan</label><input id="iKet">
   <div class="total">Diterima: <span id="prevS">Rp 0</span></div>
+  <div class="kecil">(UJ − Kas Bon Muat) + Uang Bongkar + Standby + Tambahan</div>
   <label>Foto Surat Jalan (maks 8)</label>
   <div class="row">
     <input type="file" accept="image/*" capture="environment" onchange="pilihFoto(event)" id="camInput" style="display:none">
@@ -324,6 +325,7 @@ window.rehitungS = () => {
   $('iBongkar').value = hitungUB($('iQty').value, $('iUBK').value);
   $('prevS').textContent = rp(
     (Number($('iUJ').value)||0)-(Number($('iKB').value)||0)
+    +(Number($('iBongkar').value)||0)
     +(Number($('iUS').value)||0)+(Number($('iT').value)||0));
 };
 
@@ -362,14 +364,15 @@ window.simpan = async () => {
   const uj=Number($('iUJ').value)||0, kb=Number($('iKB').value)||0,
         us=Number($('iUS').value)||0, tb=Number($('iT').value)||0;
   const ub = Number($('iUBK').value)||0;
+  const bk = Number($('iBongkar').value)||0;
   const data = {
     supirId, nama:profil.nama, noPol:profil.noPol, unit:profil.unit,
     tujuanId:t.id, tujuan:t.nama,
     uangJalan:uj, ubKarton:ub,
-    qty:Number($('iQty').value)||0, uangBongkar:Number($('iBongkar').value)||0,
+    qty:Number($('iQty').value)||0, uangBongkar:bk,
     noDN:$('iDN').value.trim(), yangStandby:$('iStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim(),
-    diterima: uj-kb+us+tb, status:'menunggu', sumber:'supir', waktu:serverTimestamp()
+    diterima: (uj-kb)+bk+us+tb, status:'menunggu', sumber:'supir', waktu:serverTimestamp()
   };
   try {
     const ref = await addDoc(collection(db,'pengajuan'), data);
