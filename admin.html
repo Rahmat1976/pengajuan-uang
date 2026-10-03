@@ -125,6 +125,7 @@
   <label>Uang Tambahan (Rp)</label><input id="fTambahan" type="number" inputmode="numeric" oninput="rehitung()">
   <label>Keterangan Uang Tambahan</label><input id="fKet" placeholder="Contoh: parkir tronton belum diklem">
   <div class="total">Diterima supir: <span id="prevDiterima">Rp 0</span></div>
+  <div class="kecil">(UJ − Kas Bon Muat) + Uang Bongkar + Standby + Tambahan</div>
   <label>Foto Surat Jalan (maks 8, dikompres otomatis)</label>
   <div class="row">
     <input type="file" accept="image/*" capture="environment" onchange="pilihFoto(event)" id="camInput" style="display:none">
@@ -375,6 +376,7 @@ window.rehitung = () => {
   $('fBongkar').value = hitungUB($('fQty').value, $('fUBK').value);
   $('prevDiterima').textContent = rp(
     (Number($('fUJ').value)||0)-(Number($('fKasbon').value)||0)
+    +(Number($('fBongkar').value)||0)
     +(Number($('fUStandby').value)||0)+(Number($('fTambahan').value)||0));
 };
 
@@ -415,14 +417,15 @@ window.simpan = async () => {
   const uj=Number($('fUJ').value)||0, kb=Number($('fKasbon').value)||0,
         us=Number($('fUStandby').value)||0, tb=Number($('fTambahan').value)||0;
   const ub = Number($('fUBK').value)||0;
+  const bk = Number($('fBongkar').value)||0;
   const data = {
     supirId:s.id, nama:s.nama, noPol:s.noPol, unit:s.unit,
     tujuanId:t.id, tujuan:t.nama,
     uangJalan:uj, ubKarton:ub,
-    qty:Number($('fQty').value)||0, uangBongkar:Number($('fBongkar').value)||0,
+    qty:Number($('fQty').value)||0, uangBongkar:bk,
     noDN:$('fDN').value.trim(), yangStandby:$('fStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('fKet').value.trim(),
-    diterima: uj-kb+us+tb, status:'menunggu', sumber:'admin', waktu:serverTimestamp()
+    diterima: (uj-kb)+bk+us+tb, status:'menunggu', sumber:'admin', waktu:serverTimestamp()
   };
   try {
     const ref = await addDoc(collection(db,'pengajuan'), data);
@@ -542,7 +545,7 @@ window.bukaEdit = id => {
     <label>No. DN</label><input id="eDN" value="${esc(p.noDN)}">
     <label>Uang Jalan</label><input id="eUJ" type="number" value="${p.uangJalan||0}" oninput="eHitung()">
     <label>UB</label><input id="eUBK" type="number" value="${p.ubKarton||0}" oninput="eHitung()">
-    <label>Uang Bongkar</label><input id="eBongkar" type="number" value="${p.uangBongkar||0}">
+    <label>Uang Bongkar</label><input id="eBongkar" type="number" value="${p.uangBongkar||0}" oninput="eHitung()">
     <label>Yang Standby</label><input id="eStandby" value="${esc(p.yangStandby)}">
     <label>Uang Standby</label><input id="eUS" type="number" value="${p.uangStandby||0}" oninput="eHitung()">
     <label>Kas Bon Muat</label><input id="eKB" type="number" value="${p.kasBon||0}" oninput="eHitung()">
@@ -563,19 +566,21 @@ window.eHitung = () => {
   $('eBongkar').value = hitungUB($('eQty').value, $('eUBK').value);
   $('eDiterima').textContent = rp(
     (Number($('eUJ').value)||0)-(Number($('eKB').value)||0)
+    +(Number($('eBongkar').value)||0)
     +(Number($('eUS').value)||0)+(Number($('eT').value)||0));
 };
 window.simpanEdit = async () => {
   const uj=Number($('eUJ').value)||0, kb=Number($('eKB').value)||0,
         us=Number($('eUS').value)||0, tb=Number($('eT').value)||0;
   const ub = Number($('eUBK').value)||0;
+  const bk = Number($('eBongkar').value)||0;
   await updateDoc(doc(db,'pengajuan',editId), {
     noDN:$('eDN').value.trim(), qty:Number($('eQty').value)||0,
     uangJalan:uj, ubKarton:ub,
-    uangBongkar:Number($('eBongkar').value)||0,
+    uangBongkar:bk,
     yangStandby:$('eStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('eKet').value.trim(),
-    status:$('eSt').value, diterima:uj-kb+us+tb
+    status:$('eSt').value, diterima:(uj-kb)+bk+us+tb
   });
   tutupModal();
 };
