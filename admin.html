@@ -115,10 +115,10 @@
     <div id="reader"></div>
     <button class="abu2" onclick="stopScan()">Tutup Scanner</button>
   </div>
-  <label>Qty Karton</label><input id="fQty" type="number" inputmode="numeric" oninput="rehitung()">
+  <label>Qty Karton (kosongkan jika UB per mobil)</label><input id="fQty" type="number" inputmode="numeric" oninput="rehitung()">
   <label>UB (isi 500 = per karton • 500.000 = per mobil)</label><input id="fUBK" type="number" inputmode="numeric" oninput="rehitung()">
   <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="fBongkar" type="number" inputmode="numeric" oninput="rehitung()">
-  <div class="kecil">Otomatis: UB &lt; 1000 → UB × qty (per karton) • UB ≥ 1000 → flat (per mobil)</div>
+  <div class="kecil">Otomatis: UB &lt; 1000 → UB × qty (per karton) • UB ≥ 1000 → UB langsung (per mobil, qty tidak pengaruh)</div>
   <label>Yang Standby</label><input id="fStandby" placeholder="Nama / ket. yang standby">
   <label>Uang Standby (Rp)</label><input id="fUStandby" type="number" inputmode="numeric" oninput="rehitung()">
   <label>Uang Kas Bon Muat (dipotong dari uang jalan)</label><input id="fKasbon" type="number" inputmode="numeric" oninput="rehitung()">
@@ -216,9 +216,13 @@ const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 function hitungUB(qty, ub){
-  qty=Number(qty)||0; ub=Number(ub)||0;
-  if (!qty || !ub) return 0;
-  if (ub < 1000) return ub * qty;
+  ub=Number(ub)||0;
+  if (!ub) return 0;
+  if (ub < 1000){
+    const q=Number(qty)||0;
+    if (!q) return 0;
+    return ub*q;
+  }
   return ub;
 }
 const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
