@@ -121,9 +121,9 @@
     <button class="abu2" onclick="stopScan()">Tutup Scanner</button>
   </div>
   <label>Qty Karton</label><input id="iQty" type="number" inputmode="numeric" oninput="rehitungS()">
-  <label>UB / Karton (Rp)</label><input id="iUBK" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>UB (per karton / per mobil)</label><input id="iUBK" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="iBongkar" type="number" inputmode="numeric" oninput="rehitungS()">
-  <div class="kecil">Otomatis: qty &lt; 1000 → qty × UB • qty ≥ 1000 → UB × 1000</div>
+  <div class="kecil">Otomatis: UB &lt; 1000 → UB × qty (per karton) • UB ≥ 1000 → flat (per mobil)</div>
   <label>Yang Standby</label><input id="iStandby" placeholder="Nama / ket. yang standby">
   <label>Uang Standby (Rp)</label><input id="iUS" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Kas Bon Muat</label><input id="iKB" type="number" inputmode="numeric" oninput="rehitungS()">
@@ -180,7 +180,13 @@ const $ = id => document.getElementById(id);
 const rp = n => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function hitungUB(qty, ub, ubFlat){qty=Number(qty)||0;if(qty>0&&qty<1000)return qty*(Number(ub)||0);if(qty>=1000)return Number(ubFlat)||0;return 0;}
+function hitungUB(qty, ub){
+  qty=Number(qty)||0; ub=Number(ub)||0;
+  if (!qty || !ub) return 0;
+  if (ub < 1000) return ub * qty;
+  return ub;
+}
+const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
 
 let supirId = localStorage.getItem('supirId') || '', profil = null;
 let daftarTujuan = [], semuaS = [], fotoMap = {}, mulaiInit = false;
@@ -293,7 +299,7 @@ function isiTujuan(){
 function renderListT(){
   $('listT').innerHTML = daftarTujuan.length ? daftarTujuan.map(t=>{
     const rows = (t.tarif||[]).map(x=>
-      `<tr><td>${esc(x.unit)}</td><td>${rp(x.uj)}</td><td>${rp(x.ub)}/ktn</td></tr>`).join('');
+      `<tr><td>${esc(x.unit)}</td><td>${rp(x.uj)}</td><td>${rp(x.ub)} (${ubKet(x.ub)})</td></tr>`).join('');
     return `<div class="item" style="border-color:var(--acc)">
       <div class="tebal">📍 ${esc(t.nama)}</div>
       ${rows?`<table><tr><th>Unit</th><th>UJ</th><th>UB</th></tr>${rows}</table>`:'<div class="kecil">Belum ada tarif.</div>'}
@@ -315,8 +321,7 @@ window.pilihTujuan = () => {
   rehitungS();
 };
 window.rehitungS = () => {
-  const ub = Number($('iUBK').value)||0;
-  $('iBongkar').value = hitungUB($('iQty').value, ub, ub*1000);
+  $('iBongkar').value = hitungUB($('iQty').value, $('iUBK').value);
   $('prevS').textContent = rp(
     (Number($('iUJ').value)||0)-(Number($('iKB').value)||0)
     +(Number($('iUS').value)||0)+(Number($('iT').value)||0));
@@ -360,7 +365,7 @@ window.simpan = async () => {
   const data = {
     supirId, nama:profil.nama, noPol:profil.noPol, unit:profil.unit,
     tujuanId:t.id, tujuan:t.nama,
-    uangJalan:uj, ubKarton:ub, ubMobil:ub*1000,
+    uangJalan:uj, ubKarton:ub,
     qty:Number($('iQty').value)||0, uangBongkar:Number($('iBongkar').value)||0,
     noDN:$('iDN').value.trim(), yangStandby:$('iStandby').value.trim(), uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim(),
@@ -404,7 +409,7 @@ function itemS(p){
     <span class="badge ${p.status}">${(p.status||'').toUpperCase()}</span>
     <div class="tebal">📍 ${esc(p.tujuan)}</div>
     <div class="kecil">No. DN: ${esc(p.noDN)||'-'} • Qty: ${p.qty||0} karton</div>
-    <div class="kecil">Uang Jalan: ${rp(p.uangJalan)} • Bongkar: ${rp(p.uangBongkar)}</div>
+    <div class="kecil">Uang Jalan: ${rp(p.uangJalan)} • Bongkar: ${rp(p.uangBongkar)} (${ubKet(p.ubKarton)})</div>
     <div class="kecil">Kas Bon: -${rp(p.kasBon)} • Standby: ${rp(p.uangStandby)} • Tambahan: ${rp(p.uangTambahan)}</div>
     <div class="tebal" style="color:var(--acc)">Diterima: ${rp(p.diterima)}</div>
     <div class="thumbs">${thumbs}</div>
@@ -427,7 +432,6 @@ function buatTeksWA(p){
   const tgl = tglW ? tglW.getFullYear()+String(tglW.getMonth()+1).padStart(2,'0')+String(tglW.getDate()).padStart(2,'0') : '';
   const noId = 'SMJ-'+tgl+'-'+String(p.id||'').replace(/[^a-z0-9]/gi,'').slice(-4).toUpperCase();
   const ujB = (p.uangJalan||0)-(p.kasBon||0);
-  const ubKet = (p.qty||0) >= 1000 ? 'PER MOBIL' : 'PER KARTON';
   const neto = ujB + (p.uangBongkar||0) + (p.uangStandby||0) + (p.uangTambahan||0);
   return `*PENGAJUAN UJ – TRANSPORT SMJ*
 ID: ${noId}
@@ -440,7 +444,7 @@ QTY: ${p.qty||0} KARTON
 UJ: ${rp(p.uangJalan)}
 KBM: -${rp(p.kasBon)} (POTONG DARI UJ)
 UJ BERSIH: ${rp(ujB)}
-UB: ${rp(p.uangBongkar)} (${ubKet})
+UB: ${rp(p.uangBongkar)} (${ubKet(p.ubKarton)})
 STANDBY: ${rp(p.uangStandby)}
 TAMBAHAN: ${rp(p.uangTambahan)}${p.ket?' ('+p.ket+')':''}
 *TOTAL (NETO): ${rp(neto)}*
