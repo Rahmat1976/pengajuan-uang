@@ -27,6 +27,7 @@
   .card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
   label{display:block;font-size:12px;color:var(--sub);margin:9px 0 3px;font-weight:bold}
   input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--inp);color:var(--tx)}
+  input:not([type=number]):not([type=password]):not([type=file]),select{text-transform:uppercase}
   button{padding:11px 14px;margin-top:8px;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:var(--btnTx);border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer}
   .abu2{background:var(--mut);color:#fff;font-size:12px;padding:8px 10px;margin:0}
   .merah{background:var(--bad);color:#fff;margin:0}
@@ -228,6 +229,16 @@ function hitungUB(qty, ub){
 const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
 const UNITS = ['Wing Box','Fuso Long','CDD','CDE'];
 
+/* ===== HURUF KAPITAL OTOMATIS ===== */
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t && t.tagName === 'INPUT' && !['number','password','file'].includes(t.type)) {
+    const p = t.selectionStart;
+    t.value = t.value.toUpperCase();
+    try { t.setSelectionRange(p, p); } catch(_) {}
+  }
+});
+
 let daftarSupir=[], daftarTujuan=[], semuaData=[], fotoMap={}, mulaiInit=false;
 
 /* ===== TEMA SIANG/MALAM ===== */
@@ -427,8 +438,8 @@ window.simpan = async () => {
     tujuanId:t.id, tujuan:t.nama,
     uangJalan:uj, ubKarton:ub,
     qty:Number($('fQty').value)||0, uangBongkar:bk,
-    noDN:$('fDN').value.trim(), yangStandby:$('fStandby').value.trim(), uangStandby:us,
-    kasBon:kb, uangTambahan:tb, ket:$('fKet').value.trim(),
+    noDN:$('fDN').value.trim().toUpperCase(), yangStandby:$('fStandby').value.trim().toUpperCase(), uangStandby:us,
+    kasBon:kb, uangTambahan:tb, ket:$('fKet').value.trim().toUpperCase(),
     diterima: (uj-kb)+bk+us+tb, status:'menunggu', sumber:'admin', waktu:serverTimestamp()
   };
   try {
@@ -579,11 +590,11 @@ window.simpanEdit = async () => {
   const ub = Number($('eUBK').value)||0;
   const bk = Number($('eBongkar').value)||0;
   await updateDoc(doc(db,'pengajuan',editId), {
-    noDN:$('eDN').value.trim(), qty:Number($('eQty').value)||0,
+    noDN:$('eDN').value.trim().toUpperCase(), qty:Number($('eQty').value)||0,
     uangJalan:uj, ubKarton:ub,
     uangBongkar:bk,
-    yangStandby:$('eStandby').value.trim(), uangStandby:us,
-    kasBon:kb, uangTambahan:tb, ket:$('eKet').value.trim(),
+    yangStandby:$('eStandby').value.trim().toUpperCase(), uangStandby:us,
+    kasBon:kb, uangTambahan:tb, ket:$('eKet').value.trim().toUpperCase(),
     status:$('eSt').value, diterima:(uj-kb)+bk+us+tb
   });
   tutupModal();
@@ -603,11 +614,11 @@ function renderSupir(){
     </div>`).join('') : 'Belum ada supir.';
 }
 window.tambahSupir = async () => {
-  const nama=$('sNama').value.trim(), pw=$('sPw').value;
+  const nama=$('sNama').value.trim().toUpperCase(), pw=$('sPw').value;
   if (!nama || !pw) return alert('Nama dan password wajib diisi!');
   if (daftarSupir.some(x=>x.nama.toLowerCase()===nama.toLowerCase())) return alert('Nama sudah terdaftar!');
   await addDoc(collection(db,'supir'), {
-    nama, noPol:$('sNopol').value.trim(), unit:$('sUnit').value.trim(),
+    nama, noPol:$('sNopol').value.trim().toUpperCase(), unit:$('sUnit').value.trim().toUpperCase(),
     password:await sha256(pw), sumber:'admin', dibuat:serverTimestamp()
   });
   ['sNama','sNopol','sUnit','sPw'].forEach(x=>$(x).value='');
@@ -626,7 +637,7 @@ window.editSupir = id => {
   $('modal').style.display='block';
 };
 window.simpanSupir = async id => {
-  const u = { nama:$('eSN').value.trim(), noPol:$('eSP').value.trim(), unit:$('eSU').value.trim() };
+  const u = { nama:$('eSN').value.trim().toUpperCase(), noPol:$('eSP').value.trim().toUpperCase(), unit:$('eSU').value.trim().toUpperCase() };
   if ($('eSW').value) u.password = await sha256($('eSW').value);
   await updateDoc(doc(db,'supir',id), u);
   tutupModal();
@@ -651,7 +662,7 @@ function renderTujuan(){
   }).join('') : 'Belum ada tujuan.';
 }
 window.tambahTujuan = async () => {
-  const nama=$('tNama').value.trim();
+  const nama=$('tNama').value.trim().toUpperCase();
   if (!nama) return alert('Isi nama tujuan!');
   const tarif = UNITS.map((u,i)=>({
     unit:u, uj:Number($('tUJ'+i).value)||0, ub:Number($('tUB'+i).value)||0
@@ -683,7 +694,7 @@ window.simpanTujuan = async id => {
   const tarif = UNITS.map((u,i)=>({
     unit:u, uj:Number($('eTUJ'+i).value)||0, ub:Number($('eTUB'+i).value)||0
   })).filter(x=>x.uj||x.ub);
-  await updateDoc(doc(db,'tujuan',id), { nama:$('eTN').value.trim(), tarif });
+  await updateDoc(doc(db,'tujuan',id), { nama:$('eTN').value.trim().toUpperCase(), tarif });
   tutupModal();
 };
 window.hapusTujuan = async id => {
