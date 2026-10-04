@@ -27,6 +27,7 @@
   .card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
   label{display:block;font-size:12px;color:var(--sub);margin:9px 0 3px;font-weight:bold}
   input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--inp);color:var(--tx)}
+  input:not([type=number]):not([type=password]):not([type=file]),select{text-transform:uppercase}
   button{padding:11px 14px;margin-top:8px;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:var(--btnTx);border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer}
   .abu2{background:var(--mut);color:#fff;font-size:12px;padding:8px 10px;margin:0}
   .hijau{background:var(--ok);color:#fff;margin:0}
@@ -193,6 +194,16 @@ function hitungUB(qty, ub){
 }
 const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
 
+/* ===== HURUF KAPITAL OTOMATIS ===== */
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t && t.tagName === 'INPUT' && !['number','password','file'].includes(t.type)) {
+    const p = t.selectionStart;
+    t.value = t.value.toUpperCase();
+    try { t.setSelectionRange(p, p); } catch(_) {}
+  }
+});
+
 let supirId = localStorage.getItem('supirId') || '', profil = null;
 let daftarTujuan = [], semuaS = [], fotoMap = {}, mulaiInit = false;
 
@@ -218,8 +229,8 @@ window.tabAuth = m => {
 
 /* ===== DAFTAR ===== */
 window.daftar = async () => {
-  const nama=$('dNama').value.trim(), noPol=$('dNopol').value.trim(),
-        unit=$('dUnit').value.trim(), pw=$('dPw').value;
+  const nama=$('dNama').value.trim().toUpperCase(), noPol=$('dNopol').value.trim().toUpperCase(),
+        unit=$('dUnit').value.trim().toUpperCase(), pw=$('dPw').value;
   if (!nama || !noPol || !unit || !pw) return alert('Semua data wajib diisi!');
   if (pw.length < 4) return alert('Password minimal 4 karakter!');
   const cek = await getDocs(query(collection(db,'supir'), where('nama','==',nama)));
@@ -235,7 +246,7 @@ window.daftar = async () => {
 
 /* ===== MASUK ===== */
 window.masuk = async () => {
-  const nama=$('lNama').value.trim(), pw=$('lPw').value;
+  const nama=$('lNama').value.trim().toUpperCase(), pw=$('lPw').value;
   if (!nama || !pw) return alert('Isi nama dan password!');
   const s = await getDocs(query(collection(db,'supir'), where('nama','==',nama)));
   if (s.empty) return alert('Nama tidak terdaftar. Daftar dulu!');
@@ -374,8 +385,8 @@ window.simpan = async () => {
     tujuanId:t.id, tujuan:t.nama,
     uangJalan:uj, ubKarton:ub,
     qty:Number($('iQty').value)||0, uangBongkar:bk,
-    noDN:$('iDN').value.trim(), yangStandby:$('iStandby').value.trim(), uangStandby:us,
-    kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim(),
+    noDN:$('iDN').value.trim().toUpperCase(), yangStandby:$('iStandby').value.trim().toUpperCase(), uangStandby:us,
+    kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim().toUpperCase(),
     diterima: (uj-kb)+bk+us+tb, status:'menunggu', sumber:'supir', waktu:serverTimestamp()
   };
   try {
