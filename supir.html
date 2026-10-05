@@ -27,7 +27,7 @@
   .card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
   label{display:block;font-size:12px;color:var(--sub);margin:9px 0 3px;font-weight:bold}
   input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:var(--inp);color:var(--tx)}
-  input:not([type=number]):not([type=password]):not([type=file]),select{text-transform:uppercase}
+  input:not([type=number]):not([type=password]):not([type=file]):not([type=date]),select{text-transform:uppercase}
   button{padding:11px 14px;margin-top:8px;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:var(--btnTx);border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer}
   .abu2{background:var(--mut);color:#fff;font-size:12px;padding:8px 10px;margin:0}
   .hijau{background:var(--ok);color:#fff;margin:0}
@@ -35,6 +35,7 @@
   .kecil{font-size:11px;color:var(--sub);margin-top:3px}
   .tebal{font-weight:bold}
   .total{font-size:16px;font-weight:bold;color:var(--acc);margin-top:10px}
+  .stinfo{font-size:12px;font-weight:bold;color:var(--acc);margin-top:5px}
   .item{border-left:4px solid var(--warn);padding:10px;background:var(--accSoft);border-radius:10px;margin-bottom:10px}
   .item.disetujui{border-color:var(--ok)}.item.ditolak{border-color:var(--bad)}
   .badge{float:right;font-size:10px;padding:3px 8px;border-radius:10px;color:#fff;background:var(--warn)}
@@ -125,8 +126,14 @@
   <label>UB (per karton / per mobil)</label><input id="iUBK" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Bongkar (otomatis, boleh diubah)</label><input id="iBongkar" type="number" inputmode="numeric" oninput="rehitungS()">
   <div class="kecil">Otomatis: UB &lt; 1000 → UB × qty (per karton) • UB ≥ 1000 → UB langsung (per mobil, qty tidak pengaruh)</div>
-  <label>Yang Standby</label><input id="iStandby" placeholder="Nama / ket. yang standby">
-  <label>Uang Standby (Rp)</label><input id="iUS" type="number" inputmode="numeric" oninput="rehitungS()">
+  <label>📅 Tanggal Standby (mulai – selesai, kosongkan jika tidak standby)</label>
+  <div class="row">
+    <input id="iStMulai" type="date" onchange="hitungStandby()">
+    <input id="iStSelesai" type="date" onchange="hitungStandby()">
+  </div>
+  <label>Tarif Standby per Hari (Rp)</label><input id="iStTarif" type="number" inputmode="numeric" oninput="hitungStandby()">
+  <div class="stinfo" id="stInfoS"></div>
+  <label>Uang Standby (otomatis, boleh diubah)</label><input id="iUS" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Kas Bon Muat</label><input id="iKB" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Tambahan (Rp)</label><input id="iT" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Keterangan Uang Tambahan</label><input id="iKet">
@@ -194,10 +201,16 @@ function hitungUB(qty, ub){
 }
 const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
 
+function fmtTgl(v){
+  if (!v) return '';
+  const t = new Date(v+'T00:00:00');
+  return t.getDate()+'/'+(t.getMonth()+1)+'/'+t.getFullYear();
+}
+
 /* ===== HURUF KAPITAL OTOMATIS ===== */
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t && t.tagName === 'INPUT' && !['number','password','file'].includes(t.type)) {
+  if (t && t.tagName === 'INPUT' && !['number','password','file','date'].includes(t.type)) {
     const p = t.selectionStart;
     t.value = t.value.toUpperCase();
     try { t.setSelectionRange(p, p); } catch(_) {}
@@ -218,6 +231,25 @@ window.toggleTema = () => {
   terapTema();
 };
 terapTema();
+
+/* ===== HITUNG STANDBY DARI TANGGAL ===== */
+window.hitungStandby = () => {
+  const m=$('iStMulai').value, s=$('iStSelesai').value, tarif=Number($('iStTarif').value)||0;
+  let hari=0, ket='';
+  if (m && s){
+    const dm=new Date(m+'T00:00:00'), ds=new Date(s+'T00:00:00');
+    hari = Math.round((ds-dm)/86400000);
+    if (hari < 0) hari = 0;
+    ket = fmtTgl(m)+' - '+fmtTgl(s)+' ('+hari+' HARI)';
+    $('stInfoS').textContent = fmtTgl(m)+' - '+fmtTgl(s)+' = '+hari+' HARI STANDBY'
+      + (tarif ? ' × '+rp(tarif)+' = '+rp(hari*tarif) : '');
+  } else {
+    $('stInfoS').textContent = 'Isi tanggal mulai & selesai untuk hitung otomatis.';
+  }
+  $('iUS').value = hari*tarif;
+  window._stKet = ket;
+  rehitungS();
+};
 
 /* ===== AUTH TAB ===== */
 window.tabAuth = m => {
@@ -380,12 +412,13 @@ window.simpan = async () => {
         us=Number($('iUS').value)||0, tb=Number($('iT').value)||0;
   const ub = Number($('iUBK').value)||0;
   const bk = Number($('iBongkar').value)||0;
+  const stKet = (window._stKet||'').toUpperCase();
   const data = {
     supirId, nama:profil.nama, noPol:profil.noPol, unit:profil.unit,
     tujuanId:t.id, tujuan:t.nama,
     uangJalan:uj, ubKarton:ub,
     qty:Number($('iQty').value)||0, uangBongkar:bk,
-    noDN:$('iDN').value.trim().toUpperCase(), yangStandby:$('iStandby').value.trim().toUpperCase(), uangStandby:us,
+    noDN:$('iDN').value.trim().toUpperCase(), yangStandby:stKet, uangStandby:us,
     kasBon:kb, uangTambahan:tb, ket:$('iKet').value.trim().toUpperCase(),
     diterima: (uj-kb)+bk+us+tb, status:'menunggu', sumber:'supir', waktu:serverTimestamp()
   };
@@ -393,8 +426,9 @@ window.simpan = async () => {
     const ref = await addDoc(collection(db,'pengajuan'), data);
     for (const f of fileFoto) await addDoc(collection(db,'foto'), {pid:ref.id, data:f});
     alert('✅ Pengajuan terkirim! Tunggu persetujuan admin.');
-    ['iDN','iQty','iBongkar','iStandby','iUS','iKB','iT','iKet','iUJ','iUBK']
+    ['iDN','iQty','iBongkar','iStMulai','iStSelesai','iUS','iKB','iT','iKet','iUJ','iUBK']
       .forEach(x=>$(x).value='');
+    $('stInfoS').textContent=''; window._stKet='';
     $('iTujuan').value=''; fileFoto=[]; renderFoto(); $('prevS').textContent='Rp 0';
   } catch(err){ alert('Gagal: '+err.message); }
 };
@@ -429,6 +463,7 @@ function itemS(p){
     <div class="kecil">No. DN: ${esc(p.noDN)||'-'} • Qty: ${p.qty||0} karton</div>
     <div class="kecil">Uang Jalan: ${rp(p.uangJalan)} • Bongkar: ${rp(p.uangBongkar)} (${ubKet(p.ubKarton)})</div>
     <div class="kecil">Kas Bon: -${rp(p.kasBon)} • Standby: ${rp(p.uangStandby)} • Tambahan: ${rp(p.uangTambahan)}</div>
+    ${p.yangStandby?`<div class="kecil">📅 Standby: ${esc(p.yangStandby)}</div>`:''}
     <div class="tebal" style="color:var(--acc)">Diterima: ${rp(p.diterima)}</div>
     <div class="thumbs">${thumbs}</div>
     <div class="kecil">${tgl}</div>
@@ -463,7 +498,7 @@ UJ: ${rp(p.uangJalan)}
 KBM: -${rp(p.kasBon)} (POTONG DARI UJ)
 UJ BERSIH: ${rp(ujB)}
 UB: ${rp(p.uangBongkar)} (${ubKet(p.ubKarton)})
-STANDBY: ${rp(p.uangStandby)}
+STANDBY: ${rp(p.uangStandby)}${p.yangStandby?' - '+p.yangStandby:''}
 TAMBAHAN: ${rp(p.uangTambahan)}${p.ket?' ('+p.ket+')':''}
 *TOTAL (NETO): ${rp(neto)}*
 Mohon diproses. Terima kasih.`;
