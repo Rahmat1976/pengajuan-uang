@@ -126,7 +126,6 @@
     <input id="fStMulai" type="date" onchange="hitungStandby()">
     <input id="fStSelesai" type="date" onchange="hitungStandby()">
   </div>
-  <label>Tarif Standby per Hari (Rp)</label><input id="fStTarif" type="number" inputmode="numeric" oninput="hitungStandby()">
   <div class="stinfo" id="stInfo"></div>
   <label>Uang Standby (otomatis, boleh diubah)</label><input id="fUStandby" type="number" inputmode="numeric" oninput="rehitung()">
   <label>Uang Kas Bon Muat (dipotong dari uang jalan)</label><input id="fKasbon" type="number" inputmode="numeric" oninput="rehitung()">
@@ -235,6 +234,7 @@ function hitungUB(qty, ub){
 }
 const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
 const UNITS = ['Wing Box','Fuso Long','CDD','CDE'];
+const TARIF_STANDBY = 50000;
 
 function fmtTgl(v){
   if (!v) return '';
@@ -268,19 +268,18 @@ terapTema();
 
 /* ===== HITUNG STANDBY DARI TANGGAL ===== */
 window.hitungStandby = () => {
-  const m=$('fStMulai').value, s=$('fStSelesai').value, tarif=Number($('fStTarif').value)||0;
+  const m=$('fStMulai').value, s=$('fStSelesai').value;
   let hari=0, ket='';
   if (m && s){
     const dm=new Date(m+'T00:00:00'), ds=new Date(s+'T00:00:00');
     hari = Math.round((ds-dm)/86400000);
     if (hari < 0) hari = 0;
     ket = fmtTgl(m)+' - '+fmtTgl(s)+' ('+hari+' HARI)';
-    $('stInfo').textContent = fmtTgl(m)+' - '+fmtTgl(s)+' = '+hari+' HARI STANDBY'
-      + (tarif ? ' × '+rp(tarif)+' = '+rp(hari*tarif) : '');
+    $('stInfo').textContent = fmtTgl(m)+' - '+fmtTgl(s)+' = '+hari+' HARI × '+rp(TARIF_STANDBY)+' = '+rp(hari*TARIF_STANDBY);
   } else {
-    $('stInfo').textContent = 'Isi tanggal mulai & selesai untuk hitung otomatis.';
+    $('stInfo').textContent = '';
   }
-  $('fUStandby').value = hari*tarif;
+  $('fUStandby').value = hari*TARIF_STANDBY;
   window._stKet = ket;
   rehitung();
 };
@@ -595,7 +594,7 @@ window.bukaEdit = id => {
     <label>Uang Jalan</label><input id="eUJ" type="number" value="${p.uangJalan||0}" oninput="eHitung()">
     <label>UB</label><input id="eUBK" type="number" value="${p.ubKarton||0}" oninput="eHitung()">
     <label>Uang Bongkar</label><input id="eBongkar" type="number" value="${p.uangBongkar||0}" oninput="eHitung()">
-    <label>Ket. Standby (teks, contoh: 5/10/2026 - 7/10/2026 (2 HARI))</label><input id="eStandby" value="${esc(p.yangStandby)}">
+    <label>Ket. Standby (teks)</label><input id="eStandby" value="${esc(p.yangStandby)}">
     <label>Uang Standby</label><input id="eUS" type="number" value="${p.uangStandby||0}" oninput="eHitung()">
     <label>Kas Bon Muat</label><input id="eKB" type="number" value="${p.kasBon||0}" oninput="eHitung()">
     <label>Uang Tambahan</label><input id="eT" type="number" value="${p.uangTambahan||0}" oninput="eHitung()">
