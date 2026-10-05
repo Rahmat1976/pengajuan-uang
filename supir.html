@@ -131,7 +131,6 @@
     <input id="iStMulai" type="date" onchange="hitungStandby()">
     <input id="iStSelesai" type="date" onchange="hitungStandby()">
   </div>
-  <label>Tarif Standby per Hari (Rp)</label><input id="iStTarif" type="number" inputmode="numeric" oninput="hitungStandby()">
   <div class="stinfo" id="stInfoS"></div>
   <label>Uang Standby (otomatis, boleh diubah)</label><input id="iUS" type="number" inputmode="numeric" oninput="rehitungS()">
   <label>Uang Kas Bon Muat</label><input id="iKB" type="number" inputmode="numeric" oninput="rehitungS()">
@@ -200,6 +199,7 @@ function hitungUB(qty, ub){
   return ub;
 }
 const ubKet = ub => (Number(ub)||0) < 1000 ? 'PER KARTON' : 'PER MOBIL';
+const TARIF_STANDBY = 50000;
 
 function fmtTgl(v){
   if (!v) return '';
@@ -234,19 +234,18 @@ terapTema();
 
 /* ===== HITUNG STANDBY DARI TANGGAL ===== */
 window.hitungStandby = () => {
-  const m=$('iStMulai').value, s=$('iStSelesai').value, tarif=Number($('iStTarif').value)||0;
+  const m=$('iStMulai').value, s=$('iStSelesai').value;
   let hari=0, ket='';
   if (m && s){
     const dm=new Date(m+'T00:00:00'), ds=new Date(s+'T00:00:00');
     hari = Math.round((ds-dm)/86400000);
     if (hari < 0) hari = 0;
     ket = fmtTgl(m)+' - '+fmtTgl(s)+' ('+hari+' HARI)';
-    $('stInfoS').textContent = fmtTgl(m)+' - '+fmtTgl(s)+' = '+hari+' HARI STANDBY'
-      + (tarif ? ' × '+rp(tarif)+' = '+rp(hari*tarif) : '');
+    $('stInfoS').textContent = fmtTgl(m)+' - '+fmtTgl(s)+' = '+hari+' HARI × '+rp(TARIF_STANDBY)+' = '+rp(hari*TARIF_STANDBY);
   } else {
-    $('stInfoS').textContent = 'Isi tanggal mulai & selesai untuk hitung otomatis.';
+    $('stInfoS').textContent = '';
   }
-  $('iUS').value = hari*tarif;
+  $('iUS').value = hari*TARIF_STANDBY;
   window._stKet = ket;
   rehitungS();
 };
